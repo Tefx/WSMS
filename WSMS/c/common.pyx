@@ -1,4 +1,3 @@
-# cython: profile=False, cdivision=True, boundscheck=False, wraparound=False, initializedcheck=False
 cdef class Resources:
     @classmethod
     def zero(cls):
@@ -29,5 +28,16 @@ cdef class Resources:
     def scale(Resources self, Resources other):
         res_scale(&self.c, &other.c)
 
-    def __str__(self):
+    def __repr__(self):
         return "({:.2%}, {})".format(self.c.core, int(self.c.memory))
+
+    def __getitem__(self, res):
+        if res == "core":
+            return self.c.core
+        elif res == "memory":
+            return self.c.memory
+
+    def copy(self):
+        res = Resources()
+        res._set_value(self.c.core, self.c.memory)
+        return res

@@ -1,4 +1,3 @@
-# cython: profile=False, cdivision=True, boundscheck=False, wraparound=False, initializedcheck=False
 from WSMS.c.problem cimport Problem
 from cpython cimport array
 import array

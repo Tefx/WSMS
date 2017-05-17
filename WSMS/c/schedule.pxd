@@ -1,3 +1,4 @@
+from WSMS.c.common cimport Resources
 from WSMS.c.problem cimport problem_t, Problem
 from WSMS.c.machine cimport machine_t, Machine
 
@@ -7,8 +8,10 @@ cdef extern from "schedule.h":
         double cost
 
     struct schedule_t:
+        int num_tasks
         int num_vms
         int* start_times
+        int* finish_times
         int* placements
         int* vm_types
         objectives_t objectives

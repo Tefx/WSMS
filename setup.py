@@ -10,4 +10,10 @@ extensions = [Extension(name = "*",
                         library_dirs = ['./lib'],
                         include_dirs=["./lib/src"])]
 
-setup(ext_modules = cythonize(extensions))
+setup(ext_modules = cythonize(extensions, 
+                              compiler_directives={
+                                  "profile": False,
+                                  "cdivision": True,
+                                  "boundscheck": False,
+                                  "initializedcheck": False,
+                              }))

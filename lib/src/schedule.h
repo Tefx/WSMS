@@ -10,8 +10,10 @@ typedef struct objectives_t {
 } objectives_t;
 
 typedef struct schedule_t {
+    int num_tasks;
     int num_vms;
     int* start_times;
+    int* finish_times;
     int* placements;
     int* vm_types;
     objectives_t objectives;

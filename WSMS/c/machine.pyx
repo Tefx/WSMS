@@ -1,4 +1,3 @@
-# cython: profile=False, cdivision=True, boundscheck=False, wraparound=False, initializedcheck=False
 from cpython cimport array
 import array
 

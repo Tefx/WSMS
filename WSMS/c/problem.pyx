@@ -1,7 +1,9 @@
-# cython: profile=False, cdivision=True, boundscheck=False, wraparound=False, initializedcheck=False
 from cpython cimport array
 import array
 from math import ceil
+import os.path
+import json
+
 
 cdef class Problem:
     def __cinit__(self, dict tasks, dict mtypes,
@@ -67,3 +69,14 @@ cdef class Problem:
 
     def tasks(self):
         return range(self.c.num_tasks)
+
+    @classmethod
+    def load(cls, dax_name, type_file, total_limit, charge_unit,
+             families=["c4"], path="resources"):
+        with open(os.path.join(path, "platforms/{}.plt".format(type_file))) as f:
+            types = {k:v for k,v in json.load(f).items() \
+                     if k.split(".")[0] in families}
+        with open(os.path.join(path, "workflows/{}.wrk".format(dax_name))) as f:
+            tasks = json.load(f)
+        return cls(tasks, types, total_limit, charge_unit)
+

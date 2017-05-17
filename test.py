@@ -2,11 +2,9 @@
 
 import array
 
-from WSMS.workflow import read_workflow, read_VM_types, trans_dax_workflow
 from WSMS.c.problem import Problem
 from WSMS.c.schedule import Schedule
 from WSMS.c.extra import sort_by_upward_ranks
-from WSMS.utils import verify_schedule
 
 workflows = [
     "CyberShake_30", "Epigenomics_24", "Inspiral_30", "Montage_25", "Sipht_30",
@@ -16,16 +14,12 @@ workflows = [
     ]
 
 if __name__ == '__main__':
-    types = read_VM_types("ec2.typ")
-
     for wrk in workflows:
-        tasks = read_workflow(wrk)
-        problem = Problem(tasks, types, 20, 3600)
-
-        placements = array.array("i", [0 for _ in range(problem.num_tasks())])
-        vm_types = array.array("i", [4])
+        problem = Problem.load(wrk, "EC2", 20, 3600)
+        placements = array.array("i", [0]*problem.num_tasks())
+        vm_types = array.array("i", [2])
         order = sort_by_upward_ranks(problem)
-        for _ in range(10 * 10000):
-            schedule = Schedule(placements, vm_types)
-            schedule.complete_1(problem, order)
-        verify_schedule(problem, schedule)
+        schedule = Schedule(placements, vm_types)
+        schedule.complete_1(problem, order)
+        print("Verifying schedule on {}: {}".format(wrk, schedule.verify(problem)))
+        schedule.plot_utilization(problem, "core", wrk)
