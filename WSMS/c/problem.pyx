@@ -36,7 +36,9 @@ cdef class Problem:
         problem_free(&self.c)
 
     def task_demands(self, int task_id):
-        return problem_task_demands(&self.c, task_id)
+        res = Resources()
+        res._setc(problem_task_demands(&self.c, task_id))
+        return res
 
     def task_runtime(self, int task_id, int type_id):
         return problem_task_runtime(&self.c, task_id, type_id)
@@ -50,7 +52,9 @@ cdef class Problem:
         return [task.nexts[i] for i in range(task.num_prevs)]
 
     def type_capacities(self, int type_id):
-        return problem_type_capacities(&self.c, type_id)
+        res = Resources()
+        res._setc(problem_type_capacities(&self.c, type_id))
+        return res
 
     def type_price(self, int type_id):
         return problem_type_price(&self.c, type_id)

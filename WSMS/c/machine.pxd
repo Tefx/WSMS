@@ -52,4 +52,4 @@ cdef extern from "platform.h":
 
 cdef class Machine:
     cdef machine_t c
-    cdef setc(Machine self, machine_t* c)
+    cdef _setc(Machine self, machine_t* c)

@@ -6,9 +6,12 @@ cdef class Resources:
         res._set_value(0, 0)
         return res
 
-    def _set_value(self, double core, int memory):
+    def _set_value(self, core, memory):
         self.c.core = core
         self.c.memory = memory
+
+    cdef _setc(self, resources_t c):
+        self.c = c
 
     def __iadd__(Resources self, Resources other):
         self.c.core += other.c.core

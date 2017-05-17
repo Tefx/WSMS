@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from math import ceil
 import simplejson as json
-from os.path import basename
+import os.path
 from random import gauss
 
 
@@ -23,7 +23,7 @@ def read_dax(dax_name):
     soup = BeautifulSoup(open(xml_file), "html.parser")
 
     with open("resources/workflows/Characteristics.json") as f:
-        app_name = basename(dax_name).split("_")[0]
+        app_name = os.path.basename(dax_name).split("_")[0]
         chars = json.load(f)[app_name]
 
     tasks = {}
@@ -42,6 +42,9 @@ def read_dax(dax_name):
             tasks[child]["prevs"].add(parent)
             tasks[parent]["nexts"].add(child)
 
+    for task in tasks.values():
+        task["prevs"] = list(task["prevs"])
+        task["nexts"] = list(task["nexts"])
     return tasks
 
 
@@ -51,6 +54,16 @@ def read_VM_types(type_file, families=["c4"]):
 
     return {k: v for k, v in data.items() if k.split(".")[0] in families}
 
+def trans_dax_workflow(dax_name, path="resources/workflows"):
+    tasks = read_dax(dax_name)
+    filename = os.path.abspath(os.path.join(path, "{}.wrk".format(dax_name)))
+    with open(filename, "w") as f:
+        json.dump(tasks, f, indent=2)
+
+def read_workflow(dax_name, path="resources/workflows"):
+    with open(os.path.join(path, "{}.wrk".format(dax_name))) as f:
+        data = json.load(f)
+    return data
 
 if __name__ == '__main__':
     print(read_dax("Montage_50"))

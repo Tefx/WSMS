@@ -4,7 +4,7 @@ import array
 
 cdef class Machine:
 
-    cdef setc(Machine self, machine_t* c):
+    cdef _setc(Machine self, machine_t* c):
         self.c = c[0]
 
     def __dealloc__(self):

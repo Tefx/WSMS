@@ -11,3 +11,4 @@ cdef extern from "common.h":
 
 cdef class Resources:
     cdef resources_t c
+    cdef _setc(self, resources_t c)

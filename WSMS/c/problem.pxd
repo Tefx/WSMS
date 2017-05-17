@@ -1,4 +1,4 @@
-from WSMS.c.common cimport resources_t
+from WSMS.c.common cimport resources_t, Resources
 
 cdef extern from "problem.h":
     struct task_t:
@@ -18,7 +18,7 @@ cdef extern from "problem.h":
         mtype_t* types
         int num_tasks
         int num_types
-        int total_limits
+        int total_limit
         int charge_unit
         int* rt_matrix
 

@@ -20,7 +20,7 @@ cdef class Schedule:
         ms = []
         for i in range(self.c.num_vms):
             m = Machine()
-            m.setc(&cms[i])
+            m._setc(&cms[i])
             ms.append(ms)
         free(cms)
         return ms
