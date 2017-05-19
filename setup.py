@@ -5,8 +5,8 @@ from Cython.Build import cythonize
 
 extensions = [Extension(name = "*",
                         sources = ["WSMS/c/*.pyx"],
-                        extra_compile_args=['-Ofast', '-march=native'],
-                        libraries = ['wsms'],
+                        extra_compile_args=['-Ofast', '-march=native', '-ffast-math'],
+                        libraries = ['wsms', "wsms_extra"],
                         library_dirs = ['./lib'],
                         include_dirs=["./lib/src"])]
 

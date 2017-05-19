@@ -1,11 +1,16 @@
 #include "bin.h"
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 #include "common.h"
 
 #define _next(node) list_entry((node)->list.next, bin_node_t, list)
 #define _prev(node) list_entry((node)->list.prev, bin_node_t, list)
 #define allocated(x) ((volume_t)((x) + 1))
+
+static inline void volume_ineg(volume_t a, int dim) {
+    while (--dim >= 0) a[dim] = -a[dim];
+}
 
 static inline bool volume_le(volume_t a, volume_t b, int dim) {
     while (--dim >= 0 && fle(a[dim], b[dim]))
@@ -100,6 +105,10 @@ int bin_close_time(bin_t* bin) {
     return bin_is_empty(bin) ? 0 : tmp->time;
 }
 
+int bin_span(bin_t* bin) {
+    return bin_is_empty(bin) ? 0 : bin_close_time(bin) - bin_open_time(bin);
+}
+
 bin_node_t* earliest_available_node(bin_t* bin, int est, int length,
                                     volume_t demands, volume_t capacities) {
     int ft = est + length;
@@ -124,10 +133,11 @@ bin_node_t* earliest_available_node(bin_t* bin, int est, int length,
 
 bin_item_t bin_alloc_after_node(bin_t* bin, bin_node_t* node, int st, int ft,
                                 volume_t demands) {
-    bin_node_t* tail = _next(bin->head);
     int dim = bin->volume_dim;
+    if (!node) node = bin_search(bin, st);
     if (node->time != st) node = _clone_node(bin, node, st);
     bin_node_t* start_node;
+    bin_item_t item = {st, ft, NULL, NULL};
     volume_iadd(allocated(node), demands, dim);
     if (volume_eq(allocated(_prev(node)), allocated(node), dim)) {
         start_node = _prev(node);
@@ -135,6 +145,7 @@ bin_item_t bin_alloc_after_node(bin_t* bin, bin_node_t* node, int st, int ft,
     } else {
         start_node = node;
     }
+    item.start_node = start_node;
     node = _next(node);
     while (node->time < ft) {
         volume_iadd(allocated(node), demands, dim);
@@ -145,9 +156,11 @@ bin_item_t bin_alloc_after_node(bin_t* bin, bin_node_t* node, int st, int ft,
         volume_isub(allocated(node), demands, dim);
     } else if (volume_eq(allocated(_prev(node)), allocated(node), dim)) {
         _delete_node(bin, node);
-        return (bin_item_t){start_node, _prev(node)};
+        node = _prev(node);
+        return (bin_item_t){st, ft, start_node, _prev(node)};
     }
-    return (bin_item_t){start_node, node};
+    item.finish_node = node;
+    return item;
 }
 
 int bin_extendable_interval_start(bin_t* bin, int st, volume_t demands,
@@ -175,4 +188,25 @@ int bin_extendable_interval_finish(bin_t* bin, int ft, volume_t demands,
     while (volume_le(allocated(finish_node), capacities, dim))
         finish_node = _next(finish_node);
     return MAX(finish_node->time, ft);
+}
+
+void bin_shift(bin_t* bin, int delta) {
+    bin_node_t* node = _next(bin->head);
+    while (node->time != INT_MAX) {
+        node->time += delta;
+        node = _next(node);
+    }
+}
+
+void bin_shift_item(bin_t* bin, bin_item_t* item, int delta, volume_t demands) {
+    int length = item->finish_time - item->start_time;
+    int new_st = item->start_time + delta;
+    if (abs(delta) > length) {
+        volume_ineg(demands, bin->volume_dim);
+        bin_alloc_after_node(bin, item->start_node, item->start_time,
+                             item->finish_time, demands);
+        volume_ineg(demands, bin->volume_dim);
+        bin_alloc_after_node(bin, NULL, new_st, new_st+length, demands);
+    } else {
+    }
 }

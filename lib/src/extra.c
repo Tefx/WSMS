@@ -29,7 +29,7 @@ int compare_priorities(const void* p1, const void* p2, void* pa) {
   return (a < b) - (a > b);
 }
 
-void sort_by_priorities(int* priorities, int* results, int num_tasks) {
+void sort_tasks_by_priorities(int* priorities, int* results, int num_tasks) {
   for (int i = 0; i < num_tasks; ++i)
     results[i] = i;
   qsort_r(results, num_tasks, sizeof(int), compare_priorities, priorities);

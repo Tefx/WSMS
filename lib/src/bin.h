@@ -14,6 +14,8 @@ typedef struct bin_node_t {
 } bin_node_t;
 
 typedef struct bin_item_t {
+    int start_time;
+    int finish_time;
     bin_node_t* start_node;
     bin_node_t* finish_node;
 } bin_item_t;
@@ -34,9 +36,11 @@ void bin_init(bin_t* bin, int dim);
 void bin_free(bin_t* bin);
 
 bin_node_t* bin_search(bin_t* bin, int time);
+void bin_shift(bin_t* bin, int delta);
 
 int bin_open_time(bin_t* bin);
 int bin_close_time(bin_t* bin);
+int bin_span(bin_t* bin);
 
 bin_node_t* earliest_available_node(bin_t* bin, int est, int length,
                                     volume_t demands, volume_t capacities);

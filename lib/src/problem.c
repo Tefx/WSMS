@@ -42,7 +42,7 @@ void problem_add_type(problem_t* problem, int vt_id, resources_t capacities,
                       double price, int limit) {
     mtype_t* type = problem->types + vt_id;
     type->capacities = capacities;
-    type->price = price;
+    type->price = price * problem->charge_unit;
     type->limit = limit;
 }
 

@@ -1,4 +1,5 @@
 from WSMS.c.common cimport resources_t, Resources
+from WSMS.c.problem cimport *
 
 
 cdef extern from "platform.h":
@@ -19,6 +20,8 @@ cdef extern from "platform.h":
     int machine_open_time(machine_t *machine)
     int machine_close_time(machine_t *machine)
     int machine_runtime(machine_t *machine)
+
+    void machine_shift(machine_t *machine, int delta)
 
     int machine_alloc_earliest(machine_t *machine, int est, int rt, 
                                resources_t *demands, resources_t *capacities)
@@ -52,4 +55,6 @@ cdef extern from "platform.h":
 
 cdef class Machine:
     cdef machine_t c
-    cdef _setc(Machine self, machine_t* c)
+    cdef int _type_id
+    cdef resources_t _capacities
+    cdef problem_t* _problem

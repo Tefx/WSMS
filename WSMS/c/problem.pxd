@@ -1,4 +1,5 @@
 from WSMS.c.common cimport resources_t, Resources
+from libcpp cimport bool
 
 cdef extern from "problem.h":
     struct task_t:
@@ -34,6 +35,9 @@ cdef extern from "problem.h":
                           double price, int limit)
     void problem_set_runtime(problem_t* problem,
                         int task_id, int type_id, int runtime)
+
+    bool problem_task_is_entry(problem_t* problem, int task_id)
+    bool problem_task_is_exit(problem_t* problem, int task_id)
 
     task_t* problem_task(problem_t* problem, int task_id)
     resources_t problem_task_demands(problem_t* problem, int task_id)

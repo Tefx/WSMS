@@ -39,6 +39,12 @@ void problem_add_type(problem_t* problem, int vt_id, resources_t capacities,
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,
                          int runtime);
 
+#define problem_task_is_entry(problem, task_id) \
+    ((problem)->tasks[task_id].num_prevs == 0)
+
+#define problem_task_is_exit(problem, task_id) \
+    ((problem)->tasks[task_id].num_nexts == 0)
+
 #define problem_task(problem, task_id) ((problem)->tasks + (task_id))
 #define problem_task_demands(problem, task_id) \
     ((problem)->tasks[task_id].demands)

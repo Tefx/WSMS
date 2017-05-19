@@ -45,6 +45,12 @@ cdef class Problem:
     def task_runtime(self, int task_id, int type_id):
         return problem_task_runtime(&self.c, task_id, type_id)
 
+    def task_is_entry(self, int task_id):
+        return problem_task_is_entry(&self.c, task_id)
+
+    def task_is_exit(self, int task_id):
+        return problem_task_is_exit(&self.c, task_id)
+
     def task_prevs(self, int task_id):
         cdef task_t* task = problem_task(&self.c, task_id)
         return [task.prevs[i] for i in range(task.num_prevs)]
@@ -64,11 +70,21 @@ cdef class Problem:
     def charge(self, int type_id, int runtime):
         return problem_charge(&self.c, type_id, runtime)
 
+    @property
     def num_tasks(self):
         return self.c.num_tasks
 
+    @property
+    def num_types(self):
+        return self.c.num_types
+
+    @property
     def tasks(self):
         return range(self.c.num_tasks)
+
+    @property
+    def types(self):
+        return range(self.c.num_types)
 
     @classmethod
     def load(cls, dax_name, type_file, total_limit, charge_unit,

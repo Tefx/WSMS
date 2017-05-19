@@ -13,26 +13,57 @@ static inline int _earliest_start_time(task_t* task, int* finish_times) {
     return est;
 }
 
-void schedule_init(schedule_t* schedule, int* placements, int* vm_types,
-                   int num_tasks, int num_vms) {
+void schedule_init(schedule_t* schedule, int num_tasks) {
     schedule->num_tasks = num_tasks;
-    schedule->num_vms = num_vms;
+    schedule->placements = (int*)malloc(sizeof(int) * num_tasks);
+    schedule->vm_types = NULL;
     schedule->start_times = (int*)malloc(sizeof(int) * num_tasks);
     schedule->finish_times = (int*)malloc(sizeof(int) * num_tasks);
-    schedule->placements = (int*)malloc(sizeof(int) * num_tasks);
-    schedule->vm_types = (int*)malloc(sizeof(int) * num_vms);
-    memcpy(schedule->placements, placements, sizeof(int) * num_tasks);
-    memcpy(schedule->vm_types, vm_types, sizeof(int) * num_vms);
 }
 
 void schedule_free(schedule_t* schedule) {
-    free(schedule->start_times);
-    free(schedule->finish_times);
-    free(schedule->placements);
-    free(schedule->vm_types);
+    if (schedule->placements) free(schedule->placements);
+    if (schedule->vm_types) free(schedule->vm_types);
+    if (schedule->start_times) free(schedule->start_times);
+    if (schedule->finish_times) free(schedule->finish_times);
 }
 
-void schedule_complete_1(problem_t* problem, schedule_t* schedule, int* order,
+void schedule_set_placements(schedule_t* schedule, int* placements) {
+    memcpy(schedule->placements, placements, sizeof(int) * schedule->num_tasks);
+}
+
+void schedule_set_vm_types(schedule_t* schedule, int* vm_types, int num_vms) {
+    schedule->num_vms = num_vms;
+    schedule->vm_types = (int*)malloc(sizeof(int) * num_vms);
+    memcpy(schedule->vm_types, vm_types, sizeof(int) * num_vms);
+}
+
+void schedule_set_start_times(schedule_t* schedule, int* start_times) {
+    memcpy(schedule->start_times, start_times,
+           sizeof(int) * schedule->num_tasks);
+}
+
+void schedule_set_finish_times(schedule_t* schedule, int* finish_times) {
+    memcpy(schedule->finish_times, finish_times,
+           sizeof(int) * schedule->num_tasks);
+}
+
+void schedule_autofill_start_times(schedule_t* schedule, problem_t* problem) {
+    for (int i = 0; i < schedule->num_tasks; ++i)
+        schedule->start_times[i] =
+            schedule->finish_times[i] -
+            problem_task_runtime(problem, i, TYPL(schedule, i));
+}
+
+void schedule_autofill_finish_times(schedule_t* schedule, problem_t* problem) {
+    for (int i = 0; i < schedule->num_tasks; ++i)
+        schedule->finish_times[i] =
+            schedule->start_times[i] +
+            problem_task_runtime(problem, i, TYPL(schedule, i));
+}
+
+// the fields of *placements* and *vm_types* must have been set.
+void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
                          machine_t* vms) {
     machine_t* _vms =
         vms ? vms : (machine_t*)malloc(sizeof(machine_t) * schedule->num_vms);
@@ -42,7 +73,7 @@ void schedule_complete_1(problem_t* problem, schedule_t* schedule, int* order,
 
     for (int i = 0; i < schedule->num_vms; ++i) machine_init(_vms + i);
 
-    for (int i = 0; i < problem->num_tasks; ++i) {
+    for (int i = 0; i < schedule->num_tasks; ++i) {
         task_id = order[i];
         vm_id = schedule->placements[task_id];
         type_id = schedule->vm_types[vm_id];
@@ -66,7 +97,7 @@ void schedule_complete_1(problem_t* problem, schedule_t* schedule, int* order,
         ct = machine_close_time(vm);
         t0 = MIN(t0, ot);
         t1 = MAX(t1, ct);
-        cost += problem_charge(problem, i, ct - ot);
+        cost += problem_charge(problem, TYP(schedule, i), ct - ot);
     }
 
     schedule->objectives = (objectives_t){(t1 - t0), cost};

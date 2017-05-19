@@ -17,20 +17,6 @@ void machine_free(machine_t *machine) {
     free(machine->bin);
 }
 
-int machine_open_time(machine_t *machine) {
-    return bin_open_time(machine->bin);
-}
-
-int machine_close_time(machine_t *machine) {
-    return bin_close_time(machine->bin);
-}
-
-int machine_runtime(machine_t *machine) {
-    return bin_is_empty(machine->bin)
-               ? bin_close_time(machine->bin) - bin_open_time(machine->bin)
-               : 0;
-}
-
 int machine_alloc_earliest(machine_t *machine, int est, int rt,
                            resources_t *demands, resources_t *capacities) {
     vlen_t demands_v[RES_DIM];
