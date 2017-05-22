@@ -1,133 +1,116 @@
 #include "platform.h"
 #include <stdlib.h>
+#include <string.h>
 
-#define RES_DIM 2
+#define res2vol(res, vol) memcpy(vol, res, sizeof(vlen_t) * RES_DIM);
 
-#define res2vol(res, vol) ((vol)[0] = (res)->core, (vol)[1] = (res)->memory)
-#define lim2vol(lim, vol) ((vol)[0] = lim)
+void task_init(task_t *task) { task_item(task) = (task_t)item_new(RES_DIM); }
+
+void task_destory(task_t *task) { item_free(task_item(task)); }
+
+void task_set(task_t *task, int length, res_t demands) {
+    task_item(task)->start_node = task_item(task)->finish_node = NULL;
+    task_item(task)->length = length;
+    res2vol(demands, item_demands(task_item(task)));
+}
 
 void machine_init(machine_t *machine) {
-    machine->bin = (bin_t *)malloc(sizeof(bin_t));
-    bin_init(machine->bin, RES_DIM);
-    machine->finger = NULL;
+    *machine = (machine_t)malloc(sizeof(bin_t) + item_real_size(LIM_DIM));
+    bin_init(machine_bin(machine), RES_DIM);
+    item_t *item = machine_item(machine);
+    item->start_node = item->finish_node = NULL;
+    item->start_time = item->length = 0;
 }
 
-void machine_free(machine_t *machine) {
-    bin_free(machine->bin);
-    free(machine->bin);
+void machine_destory(machine_t *machine) {
+    bin_destory(machine_bin(machine));
+    free(*machine);
 }
 
-int machine_alloc_earliest(machine_t *machine, int est, int rt,
-                           resources_t *demands, resources_t *capacities) {
-    vlen_t demands_v[RES_DIM];
-    vlen_t capacities_v[RES_DIM];
-    res2vol(demands, demands_v);
-    res2vol(capacities, capacities_v);
-    bin_node_t *node =
-        earliest_available_node(machine->bin, est, rt, demands_v, capacities_v);
-    iMAX(est, node->time);
-    bin_alloc_after_node(machine->bin, node, est, est + rt, demands_v);
-    return est;
-}
-
-int machine_earliest_slot(machine_t *machine, int est, int rt,
-                          resources_t *demands, resources_t *capacities) {
-    vlen_t demands_v[RES_DIM];
-    vlen_t capacities_v[RES_DIM];
-    res2vol(demands, demands_v);
-    res2vol(capacities, capacities_v);
-    machine->finger =
-        earliest_available_node(machine->bin, est, rt, demands_v, capacities_v);
-    return MAX(machine->finger->time, est);
-}
-
-void machine_place_task(machine_t *machine, int st, int rt,
-                        resources_t *demands) {
-    vlen_t demands_v[RES_DIM];
-    res2vol(demands, demands_v);
-    if (!machine->finger) machine->finger = bin_search(machine->bin, st);
-    bin_alloc_after_node(machine->bin, machine->finger, st, st + rt, demands_v);
+void machine_set(machine_t *machine, int demands) {
+    item_demands(machine_item(machine))[0] = demands;
 }
 
 void platform_init(platform_t *platform) {
-    platform->bin = (bin_t *)malloc(sizeof(bin_t));
-    bin_init(platform->bin, 1);
-    platform->finger = NULL;
+    platform_bin(platform) = (bin_t *)malloc(sizeof(bin_t));
+    bin_init(platform_bin(platform), LIM_DIM);
 }
 
-void platform_free(platform_t *platform) {
-    bin_free(platform->bin);
-    free(platform->bin);
+void platform_destory(platform_t *platform) {
+    bin_destory(platform_bin(platform));
+    free(platform_bin(platform));
 }
 
-int platform_earliest_slot(platform_t *platform, int est, int rt,
-                           int total_limit) {
-    static vlen_t demands_v[1] = {1};
-    bin_node_t *node = earliest_available_node(
-        platform->bin, est, rt, demands_v, (vlen_t *)&total_limit);
-    return MAX(node->time, est);
+int machine_earliest_position(machine_t *machine, task_t *task, int est,
+                              res_t capacities) {
+    res_t capacities_v;
+    res2vol(capacities, capacities_v);
+    return bin_earliest_position(machine_bin(machine), task_item(task), est,
+                                 capacities_v);
 }
 
-void platform_alloc_machine(platform_t *platform, machine_t *machine, int st,
-                            int rt) {
-    static vlen_t demands_v[1] = {1};
-    machine_init(machine);
-    if (!platform->finger) platform->finger = bin_search(platform->bin, st);
-    machine->item_in_platform = bin_alloc_after_node(
-        platform->bin, platform->finger, st, st + rt, demands_v);
+int machine_place_task(machine_t *machine, task_t *task) {
+    return bin_place_item(machine_bin(machine), task_item(task));
 }
 
-void platform_extend_machine(platform_t *platform, machine_t *machine, int st,
-                             int ft) {
-    static vlen_t demands_v[1] = {1};
-    int st_0 = machine_open_time(machine);
-    int ft_0 = machine_close_time(machine);
+void machine_shift_task(machine_t *machine, task_t *task, int delta) {
+    bin_shift_item(machine_bin(machine), task_item(task), delta);
+}
 
-    if (st < st_0) {
-        bin_node_t *node = bin_search(platform->bin, st);
-        bin_item_t item =
-            bin_alloc_after_node(platform->bin, node, st, st_0, demands_v);
-        machine->item_in_platform.start_node = item.start_node;
-    }
+int machine_extendable_interval_start(machine_t *machine, task_t *task,
+                                      res_t capacities) {
+    res_t capacities_v;
+    res2vol(capacities, capacities_v);
+    return bin_extendable_interval_start(machine_bin(machine), task_item(task),
+                                         capacities_v);
+}
 
-    if (ft > ft_0) {
-        bin_item_t item = bin_alloc_after_node(
-            platform->bin, machine->item_in_platform.finish_node, ft_0, ft,
-            demands_v);
-        machine->item_in_platform.finish_node = item.finish_node;
-    }
+int machine_extendable_interval_finish(machine_t *machine, task_t *task,
+                                       res_t capacities) {
+    res_t capacities_v;
+    res2vol(capacities, capacities_v);
+    return bin_extendable_interval_finish(machine_bin(machine), task_item(task),
+                                          capacities_v);
+}
+
+int platform_earliest_position(platform_t *platform, machine_t *machine,
+                               int est, int total_limit) {
+    plim_t plim_v;
+    plim_v[0] = total_limit;
+    machine_item(machine)->length = machine_runtime(machine);
+    return bin_earliest_position(platform_bin(platform), machine_item(machine),
+                                 est, plim_v);
+}
+
+int platform_place_machine(platform_t *platform, machine_t *machine) {
+    return bin_place_item(platform_bin(platform), machine_item(machine));
 }
 
 void platform_shift_machine(platform_t *platform, machine_t *machine,
                             int delta) {
-    static vlen_t demands_v[1];
-    demands_v[0] = -1;
-    int st_0 = machine_open_time(machine);
-    int ft_0 = machine_close_time(machine);
-    bin_alloc_after_node(platform->bin, machine->item_in_platform.start_node,
-                         st_0, ft_0, demands_v);
-    bin_node_t *node = bin_search(platform->bin, st_0 + delta);
-    demands_v[0] = 1;
-    machine->item_in_platform = bin_alloc_after_node(
-        platform->bin, node, st_0 + delta, ft_0 + delta, demands_v);
+    bin_shift(machine_bin(machine), delta);
+    bin_shift_item(platform_bin(platform), machine_item(machine), delta);
 }
 
-void platform_free_machine(platform_t *platform, machine_t *machine) {
-    static vlen_t demands_v[1] = {-1};
-    bin_alloc_after_node(platform->bin, machine->item_in_platform.start_node,
-                         machine_open_time(machine),
-                         machine_close_time(machine), demands_v);
+void platform_extend_machine(platform_t *platform, machine_t *machine) {
+    bin_extend_item(platform_bin(platform), machine_item(machine),
+                    machine_open_time(machine), machine_close_time(machine));
 }
 
-void platform_extendable_interval(platform_t *platform, machine_t *machine,
-                                  int *start, int *finish, int total_limit) {
-    static vlen_t demands_v[1] = {-1};
-    *start = bin_extendable_interval_start(
-        platform->bin, machine_open_time(machine), demands_v,
-        (vlen_t *)&(total_limit), machine->item_in_platform.start_node);
-    *finish = bin_extendable_interval_finish(
-        platform->bin, machine_close_time(machine), demands_v,
-        (vlen_t *)&(total_limit), machine->item_in_platform.finish_node);
+int platform_extendable_interval_start(platform_t *platform, machine_t *machine,
+                                       int total_limit) {
+    plim_t plim_v;
+    plim_v[0] = total_limit;
+    return bin_extendable_interval_start(
+        platform_bin(platform), machine_item(machine), plim_v);
+}
+
+int platform_extendable_interval_finish(platform_t *platform,
+                                        machine_t *machine, int total_limit) {
+    plim_t plim_v;
+    plim_v[0] = total_limit;
+    return bin_extendable_interval_finish(
+        platform_bin(platform), machine_item(machine), plim_v);
 }
 
 static int _compare_int(const void *a, const void *b) {

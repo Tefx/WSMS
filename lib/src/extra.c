@@ -5,7 +5,7 @@ int _upwark_rank(problem_t* problem, int task_id, int* ranks) {
   if (ranks[task_id] < 0) {
     int rank = 0;
     int nrank;
-    task_t* task = problem_task(problem, task_id);
+    task_info_t* task = problem_task(problem, task_id);
     for (int i = 0; i < task->num_nexts; ++i) {
       nrank = _upwark_rank(problem, task->nexts[i], ranks);
       iMAX(rank, nrank);

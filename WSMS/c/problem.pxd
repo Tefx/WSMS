@@ -1,21 +1,21 @@
-from WSMS.c.common cimport resources_t, Resources
+from WSMS.c.common cimport res_t, Resources
 from libcpp cimport bool
 
 cdef extern from "problem.h":
-    struct task_t:
-        resources_t demands
+    struct task_info_t:
+        res_t demands
         int num_prevs
         int num_nexts
         int* prevs
         int* nexts
 
     struct mtype_t:
-        resources_t capacities
+        res_t capacities
         double price
         int limit
 
     struct problem_t:
-        task_t* tasks
+        task_info_t* tasks
         mtype_t* types
         int num_tasks
         int num_types
@@ -28,10 +28,10 @@ cdef extern from "problem.h":
     void problem_free(problem_t* problem)
 
     void problem_add_task(problem_t* problem, int task_id,
-                          resources_t res_demands,
+                          res_t res_demands,
                           int* prev_ids, int num_prevs,
                           int* next_ids, int num_nexts)
-    void problem_add_type(problem_t* problem, int vt_id, resources_t capacities,
+    void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
                           double price, int limit)
     void problem_set_runtime(problem_t* problem,
                         int task_id, int type_id, int runtime)
@@ -39,12 +39,12 @@ cdef extern from "problem.h":
     bool problem_task_is_entry(problem_t* problem, int task_id)
     bool problem_task_is_exit(problem_t* problem, int task_id)
 
-    task_t* problem_task(problem_t* problem, int task_id)
-    resources_t problem_task_demands(problem_t* problem, int task_id)
+    task_info_t* problem_task(problem_t* problem, int task_id)
+    res_t problem_task_demands(problem_t* problem, int task_id)
     int problem_task_runtime(problem_t* problem, int task_id, int type_id)
     int problem_task_average_runtime(problem_t* problem, int task_id)
 
-    resources_t problem_type_capacities(problem_t* Problem, int type_id)
+    res_t problem_type_capacities(problem_t* Problem, int type_id)
     double problem_type_price(problem_t* problem, int type_id)
 
     double problem_charge(problem_t* problem, int type_id, int runtime)

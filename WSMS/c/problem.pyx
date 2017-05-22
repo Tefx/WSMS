@@ -8,7 +8,7 @@ import json
 cdef class Problem:
     def __cinit__(self, dict tasks, dict mtypes,
                    int total_limit, int charge_unit):
-        cdef resources_t res
+        cdef res_t res
         cdef array.array prevs, nexts
         cdef int rt
 
@@ -17,7 +17,7 @@ cdef class Problem:
         problem_init(&self.c, len(tasks), len(mtypes), total_limit, charge_unit)
 
         for i, rtid in enumerate(self.r_task_ids):
-            res.core, res.memory = tasks[rtid]["demands"]
+            res[0], res[1] = tasks[rtid]["demands"]
             prevs = array.array("i", [self.r_task_ids.index(t) for t in tasks[rtid]["prevs"]])
             nexts = array.array("i", [self.r_task_ids.index(t) for t in tasks[rtid]["nexts"]])
             problem_add_task(&self.c, i, res,
@@ -25,7 +25,7 @@ cdef class Problem:
                              nexts.data.as_ints, len(nexts))
 
         for i, rmid in enumerate(self.r_type_ids):
-            res.core, res.memory = mtypes[rmid]["capacities"]
+            res[0], res[1] = mtypes[rmid]["capacities"]
             problem_add_type(&self.c, i, res,
                              mtypes[rmid]["price"], mtypes[rmid]["limit"])
 
@@ -52,11 +52,11 @@ cdef class Problem:
         return problem_task_is_exit(&self.c, task_id)
 
     def task_prevs(self, int task_id):
-        cdef task_t* task = problem_task(&self.c, task_id)
+        cdef task_info_t* task = problem_task(&self.c, task_id)
         return [task.prevs[i] for i in range(task.num_prevs)]
 
     def task_nexts(self, int task_id):
-        cdef task_t* task = problem_task(&self.c, task_id)
+        cdef task_info_t* task = problem_task(&self.c, task_id)
         return [task.nexts[i] for i in range(task.num_prevs)]
 
     def type_capacities(self, int type_id):

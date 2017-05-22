@@ -3,3 +3,4 @@
 *.txt
 *.so
 /Makefile
+*.cbp

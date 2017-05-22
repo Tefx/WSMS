@@ -1,8 +1,9 @@
 from WSMS.c.common cimport Resources
 from WSMS.c.problem cimport problem_t, Problem
-from WSMS.c.platform cimport machine_t, Machine
 
 cdef extern from "schedule.h":
+    struct machine_t
+
     struct objectives_t:
         int makespan
         double cost
@@ -26,7 +27,7 @@ cdef extern from "schedule.h":
 
     void schedule_autofill_start_times(schedule_t* schedule, problem_t* problem)
     void schedule_autofill_finish_times(schedule_t* schedule, problem_t* problem)
-    void schedule_autofill_1(schedule_t* schedule, problem_t* problem, 
+    void schedule_autofill_1(schedule_t* schedule, problem_t* problem,
                              int* order, machine_t* vms)
 
     int PL(schedule_t* schedule, int task_id)

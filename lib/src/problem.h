@@ -3,23 +3,23 @@
 
 #include "common.h"
 
-typedef struct task_t {
-    resources_t demands;
+typedef struct task_info_t {
+    res_t demands;
     int num_prevs;
     int num_nexts;
     int* prevs;
     int* nexts;
-} task_t;
+} task_info_t;
 
-typedef struct mtype_t {
-    resources_t capacities;
+typedef struct type_info_t {
+    res_t capacities;
     double price;
     int limit;
-} mtype_t;
+} type_info_t;
 
 typedef struct problem_t {
-    task_t* tasks;
-    mtype_t* types;
+    task_info_t* tasks;
+    type_info_t* types;
     int num_tasks;
     int num_types;
     int total_limit;
@@ -31,10 +31,10 @@ void problem_init(problem_t* problem, int num_tasks, int num_types,
                   int total_limit, int charge_unit);
 void problem_free(problem_t* problem);
 
-void problem_add_task(problem_t* problem, int task_id, resources_t res_demands,
+void problem_add_task(problem_t* problem, int task_id, res_t res_demands,
                       int* prev_ids, int num_prevs, int* next_ids,
                       int num_nexts);
-void problem_add_type(problem_t* problem, int vt_id, resources_t capacities,
+void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
                       double price, int limit);
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,
                          int runtime);

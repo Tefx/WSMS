@@ -7,9 +7,9 @@ void problem_init(problem_t* problem, int num_tasks, int num_types,
                   int total_limit, int charge_unit) {
     problem->num_tasks = num_tasks;
 
-    problem->tasks = (task_t*)malloc(sizeof(task_t) * num_tasks);
+    problem->tasks = (task_info_t*)malloc(sizeof(task_info_t) * num_tasks);
     problem->num_types = num_types;
-    problem->types = (mtype_t*)malloc(sizeof(mtype_t) * num_types);
+    problem->types = (type_info_t*)malloc(sizeof(type_info_t) * num_types);
     problem->total_limit = total_limit;
     problem->charge_unit = charge_unit;
     problem->rt_matrix = (int*)malloc(sizeof(int) * num_tasks * num_types);
@@ -25,11 +25,11 @@ void problem_free(problem_t* problem) {
     free(problem->rt_matrix);
 }
 
-void problem_add_task(problem_t* problem, int task_id, resources_t res_demands,
+void problem_add_task(problem_t* problem, int task_id, res_t demands,
                       int* prev_ids, int num_prevs, int* next_ids,
                       int num_nexts) {
-    task_t* task = problem->tasks + task_id;
-    task->demands = res_demands;
+    task_info_t* task = problem->tasks + task_id;
+    memcpy(task->demands, demands, sizeof(vlen_t) * RES_DIM);
     task->num_prevs = num_prevs;
     task->num_nexts = num_nexts;
     task->prevs = (int*)malloc(sizeof(int) * num_prevs);
@@ -38,10 +38,10 @@ void problem_add_task(problem_t* problem, int task_id, resources_t res_demands,
     memcpy(task->nexts, next_ids, sizeof(int) * num_nexts);
 }
 
-void problem_add_type(problem_t* problem, int vt_id, resources_t capacities,
+void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
                       double price, int limit) {
-    mtype_t* type = problem->types + vt_id;
-    type->capacities = capacities;
+    type_info_t* type = problem->types + vt_id;
+    memcpy(type->capacities, capacities, sizeof(vlen_t) * RES_DIM);
     type->price = price * problem->charge_unit;
     type->limit = limit;
 }

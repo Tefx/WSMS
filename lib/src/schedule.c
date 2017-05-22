@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static inline int _earliest_start_time(task_t* task, int* finish_times) {
+static inline int _earliest_start_time(task_info_t* task, int* finish_times) {
     int est = 0;
     int ft;
     for (int i = 0; i < task->num_prevs; ++i) {
@@ -68,23 +68,29 @@ void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
     machine_t* _vms =
         vms ? vms : (machine_t*)malloc(sizeof(machine_t) * schedule->num_vms);
     int task_id, vm_id, type_id;
-    int est, st, rt;
+    int est;
     machine_t* vm;
+    task_t task;
 
-    for (int i = 0; i < schedule->num_vms; ++i) machine_init(_vms + i);
+    for (int i = 0; i < schedule->num_vms; ++i) {
+        machine_init(_vms + i);
+        machine_set(_vms + i, 1);
+    }
 
     for (int i = 0; i < schedule->num_tasks; ++i) {
         task_id = order[i];
         vm_id = schedule->placements[task_id];
         type_id = schedule->vm_types[vm_id];
+        vm = _vms + vm_id;
+        task_init(&task);
+        task_set(&task, problem_task_runtime(problem, task_id, type_id),
+                 problem_task_demands(problem, task_id));
         est = _earliest_start_time(problem->tasks + task_id,
                                    schedule->finish_times);
-        rt = problem_task_runtime(problem, task_id, type_id);
-        st = machine_alloc_earliest(_vms + vm_id, est, rt,
-                                    &problem_task_demands(problem, task_id),
-                                    &problem_type_capacities(problem, type_id));
-        schedule->start_times[task_id] = st;
-        schedule->finish_times[task_id] = st + rt;
+        schedule->start_times[task_id] = machine_earliest_position(
+            vm, &task, est, problem_type_capacities(problem, type_id));
+        schedule->finish_times[task_id] = machine_place_task(vm, &task);
+        task_destory(&task);
     }
 
     int t0 = INT_MAX, t1 = 0;
@@ -103,7 +109,7 @@ void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
     schedule->objectives = (objectives_t){(t1 - t0), cost};
 
     if (!vms) {
-        for (int i = 0; i < schedule->num_vms; ++i) machine_free(_vms + i);
+        for (int i = 0; i < schedule->num_vms; ++i) machine_destory(_vms + i);
         free(_vms);
     }
 }
