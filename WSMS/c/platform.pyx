@@ -8,10 +8,9 @@ cdef class Task:
 
     def __cinit__(self, int task_id):
         self._task_id = task_id
-        task_init(&self.c)
 
-    def __dealloc(self):
-        task_destory(&self.c)
+    # def __dealloc__(self):
+        # self.c.demands = NULL
 
     @property
     def start_time(self):
@@ -35,9 +34,8 @@ cdef class Machine:
 
     def __cinit__(self, Problem problem, int type_id):
         machine_init(&self.c)
-        self._type_id = type_id
-        self._capacities = problem_type_capacities(&problem.c, type_id)
         self._problem = &problem.c
+        self.type_id = type_id
         self._tasks = set()
 
     def __dealloc__(self):
@@ -65,6 +63,7 @@ cdef class Machine:
     def type_id(self, type_id):
         self._type_id = type_id
         self._capacities = problem_type_capacities(self._problem, type_id)
+        machine_set(&self.c, problem_type_demands(self._problem, type_id))
 
     @property
     def open_time(self):
@@ -80,8 +79,7 @@ cdef class Machine:
 
     @property
     def cost(self):
-        cdef int runtime = machine_runtime(&self.c)
-        return problem_charge(self._problem, self._type_id, runtime)
+        return problem_charge(self._problem, self._type_id, machine_runtime(&self.c))
 
     @property
     def tasks(self):
@@ -90,21 +88,19 @@ cdef class Machine:
 
 cdef class Platform:
     cdef platform_t c
-    cdef int _total_limit
+    cdef vlen_t* _limits
     cdef set _machines
 
     def __cinit__(self, Problem problem):
         platform_init(&self.c)
-        self._total_limit =  problem.c.total_limit
+        self._limits = &problem.c.limits[0]
         self._machines = set()
 
     def __dealloc__(self):
         platform_destory(&self.c)
 
     def earliest_position(self, Machine machine, int est):
-        machine_set(&machine.c, 1)
-        return platform_earliest_position(&self.c, &machine.c, est,
-                                         self._total_limit)
+        return platform_earliest_position(&self.c, &machine.c, est, self._limits)
 
     def provision_machine(self, Machine machine):
         self._machines.add(machine)
@@ -117,8 +113,8 @@ cdef class Platform:
         platform_shift_machine(&self.c, &machine.c, delta)
 
     def extendable_interval(self, Machine machine):
-        cdef int st = platform_extendable_interval_start(&self.c, &machine.c, self._total_limit)
-        cdef int ft = platform_extendable_interval_finish(&self.c, &machine.c, self._total_limit)
+        cdef int st = platform_extendable_interval_start(&self.c, &machine.c, self._limits)
+        cdef int ft = platform_extendable_interval_finish(&self.c, &machine.c, self._limits)
         return st, ft
 
     @property

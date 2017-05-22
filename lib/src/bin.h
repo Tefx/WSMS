@@ -22,12 +22,20 @@ typedef struct item_t {
     int length;
     bin_node_t* start_node;
     bin_node_t* finish_node;
+    volume_t demands;
 } item_t;
 
-#define item_real_size(dim) (sizeof(item_t) + sizeof(vlen_t) * (dim))
-#define item_new(dim) ((item_t*)malloc(item_real_size(dim)))
-#define item_free(item) free(item)
-#define item_demands(item) ((volume_t)((item_t*)(item) + 1))
+/*typedef struct item_t {*/
+    /*int start_time;*/
+    /*int length;*/
+    /*bin_node_t* start_node;*/
+    /*bin_node_t* finish_node;*/
+/*} item_t;*/
+
+/*#define item_real_size(dim) (sizeof(item_t) + sizeof(vlen_t) * (dim))*/
+/*#define item_new(dim) ((item_t*)malloc(item_real_size(dim)))*/
+/*#define item_free(item) free(item)*/
+/*#define item_demands(item) ((volume_t)((item_t*)(item) + 1))*/
 /*#define item_start_time(item) ((item)->start_node->time)*/
 /*#define item_finish_time(item) ((item)->start_node->time + (item)->length)*/
 
@@ -35,6 +43,7 @@ typedef struct bin_t {
     bin_node_t* head;
     mempool_t pool;
     int volume_dim;
+    vlen_t* vol_tmp;
 } bin_t;
 
 void print_bin(bin_t* bin);

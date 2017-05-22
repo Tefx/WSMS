@@ -29,7 +29,7 @@ void print_bin(bin_t* bin) {
 
 static inline bool volume_le(volume_t a, volume_t b, int dim) {
     for (int i = 0; i < dim; ++i)
-        if (!fle(a[i], b[i])) return false;
+        if (fgt(a[i], b[i])) return false;
     return true;
 }
 
@@ -45,6 +45,8 @@ static inline bool volume_eq(volume_t a, volume_t b, int dim) {
     for (int i = 0; i < (dim); ++i) (a)[i] += (b)[i]
 #define volume_isub(a, b, dim) \
     for (int i = 0; i < (dim); ++i) (a)[i] -= (b)[i]
+#define volume_sub(c, a, b, dim) \
+    for (int i = 0; i < dim; ++i) c[i] = a[i] - b[i];
 
 static inline void _set_volume(bin_node_t* node, double x, int dim) {
     for (int i = 0; i < dim; ++i) bnode_usage(node)[i] = x;
@@ -84,6 +86,7 @@ void bin_init(bin_t* bin, int dim) {
     tail->time = INT_MAX;
     _set_volume(tail, 0, dim);
     list_insert_after(&bin->head->list, &tail->list);
+    bin->vol_tmp = (vlen_t*)malloc(sizeof(vlen_t) * dim);
 }
 
 void bin_destory(bin_t* bin) { mp_destroy(&bin->pool); }
@@ -102,16 +105,16 @@ int bin_span(bin_t* bin) {
     return bin_is_empty(bin) ? 0 : bin_close_time(bin) - bin_open_time(bin);
 }
 
-int bin_earliest_position(bin_t* bin, item_t* item, int est,
-                          volume_t capacities) {
+int bin_earliest_position(bin_t* bin, item_t* item, int est, volume_t cap) {
     int length = item->length;
     int ft = est + length;
     int dim = bin->volume_dim;
+    vlen_t* tmp = bin->vol_tmp;
     bin_node_t* node = _search_node(bin, est);
     item->start_node = node;
-    volume_isub(capacities, item_demands(item), dim);
+    volume_sub(tmp, cap, item->demands, dim);
     while (node->time < ft) {
-        if (volume_le(bnode_usage(node), capacities, dim)) {
+        if (volume_le(bnode_usage(node), tmp, dim)) {
             node = _next(node);
         } else {
             node = _next(node);
@@ -152,7 +155,7 @@ int bin_place_item(bin_t* bin, item_t* item) {
     int st = item->start_time;
     int ft = st + item->length;
     item->finish_node =
-        bin_alloc(bin, st, ft, item_demands(item), &item->start_node);
+        bin_alloc(bin, st, ft, item->demands, &item->start_node);
     return ft;
 }
 
@@ -161,33 +164,33 @@ void bin_extend_item(bin_t* bin, item_t* item, int st, int ft) {
     int ft_0 = st_0 + item->length;
     if (st < st_0) {
         item->start_node = NULL;
-        bin_alloc(bin, st, st_0, item_demands(item), &item->start_node);
+        bin_alloc(bin, st, st_0, item->demands, &item->start_node);
         item->start_time = st;
     }
     if (ft > ft_0) {
         item->finish_node =
-            bin_alloc(bin, ft_0, ft, item_demands(item), &item->finish_node);
+            bin_alloc(bin, ft_0, ft, item->demands, &item->finish_node);
     }
     item->length = ft - st;
 }
 
 int bin_extendable_interval_start(bin_t* bin, item_t* item,
-                                  volume_t capacities) {
+                                  volume_t cap) {
     int dim = bin->volume_dim;
-    volume_isub(capacities, item_demands(item), dim);
+    volume_sub(bin->vol_tmp, cap, item->demands, dim);
     bin_node_t* node = item->start_node;
     if (node->time == item->start_time) node = _prev(node);
-    while (volume_le(bnode_usage(node), capacities, dim)) node = _prev(node);
+    while (volume_le(bnode_usage(node), bin->vol_tmp, dim)) node = _prev(node);
     node = _next(node);
     return MIN(node->time, item->start_time);
 }
 
 int bin_extendable_interval_finish(bin_t* bin, item_t* item,
-                                   volume_t capacities) {
+                                   volume_t cap) {
     int dim = bin->volume_dim;
-    volume_isub(capacities, item_demands(item), dim);
+    volume_sub(bin->vol_tmp, cap, item->demands, dim);
     bin_node_t* node = item->finish_node;
-    while (volume_le(bnode_usage(node), capacities, dim)) node = _next(node);
+    while (volume_le(bnode_usage(node), bin->vol_tmp, dim)) node = _next(node);
     return MAX(node->time, item->start_time + item->length);
 }
 
@@ -200,9 +203,9 @@ void bin_shift(bin_t* bin, int delta) {
 }
 
 void bin_shift_item(bin_t* bin, item_t* item, int delta) {
-    volume_ineg(item_demands(item), bin->volume_dim);
+    volume_ineg(item->demands, bin->volume_dim);
     bin_place_item(bin, item);
-    volume_ineg(item_demands(item), bin->volume_dim);
+    volume_ineg(item->demands, bin->volume_dim);
     item->start_time += delta;
     item->finish_node += delta;
     item->start_node = item->finish_node = NULL;

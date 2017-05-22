@@ -1,4 +1,4 @@
-from WSMS.c.common cimport res_t, Resources
+from WSMS.c.common cimport res_t, plim_t, Resources
 from libcpp cimport bool
 
 cdef extern from "problem.h":
@@ -13,13 +13,14 @@ cdef extern from "problem.h":
         res_t capacities
         double price
         int limit
+        plim_t demands;
 
     struct problem_t:
         task_info_t* tasks
         mtype_t* types
         int num_tasks
         int num_types
-        int total_limit
+        plim_t limits;
         int charge_unit
         int* rt_matrix
 
@@ -44,6 +45,7 @@ cdef extern from "problem.h":
     int problem_task_runtime(problem_t* problem, int task_id, int type_id)
     int problem_task_average_runtime(problem_t* problem, int task_id)
 
+    plim_t problem_type_demands(problem_t* problem, int type_id)
     res_t problem_type_capacities(problem_t* Problem, int type_id)
     double problem_type_price(problem_t* problem, int type_id)
 

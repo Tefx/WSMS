@@ -10,7 +10,7 @@ void problem_init(problem_t* problem, int num_tasks, int num_types,
     problem->tasks = (task_info_t*)malloc(sizeof(task_info_t) * num_tasks);
     problem->num_types = num_types;
     problem->types = (type_info_t*)malloc(sizeof(type_info_t) * num_types);
-    problem->total_limit = total_limit;
+    problem->limits[0] = total_limit;
     problem->charge_unit = charge_unit;
     problem->rt_matrix = (int*)malloc(sizeof(int) * num_tasks * num_types);
 }
@@ -44,6 +44,7 @@ void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
     memcpy(type->capacities, capacities, sizeof(vlen_t) * RES_DIM);
     type->price = price * problem->charge_unit;
     type->limit = limit;
+    type->demands[0] = 1;
 }
 
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,

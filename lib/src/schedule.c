@@ -74,7 +74,7 @@ void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
 
     for (int i = 0; i < schedule->num_vms; ++i) {
         machine_init(_vms + i);
-        machine_set(_vms + i, 1);
+        machine_set(_vms + i, problem_type_demands(problem, schedule->vm_types[i]));
     }
 
     for (int i = 0; i < schedule->num_tasks; ++i) {
@@ -82,7 +82,6 @@ void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
         vm_id = schedule->placements[task_id];
         type_id = schedule->vm_types[vm_id];
         vm = _vms + vm_id;
-        task_init(&task);
         task_set(&task, problem_task_runtime(problem, task_id, type_id),
                  problem_task_demands(problem, task_id));
         est = _earliest_start_time(problem->tasks + task_id,
@@ -90,7 +89,6 @@ void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
         schedule->start_times[task_id] = machine_earliest_position(
             vm, &task, est, problem_type_capacities(problem, type_id));
         schedule->finish_times[task_id] = machine_place_task(vm, &task);
-        task_destory(&task);
     }
 
     int t0 = INT_MAX, t1 = 0;

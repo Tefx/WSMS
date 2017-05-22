@@ -15,6 +15,7 @@ typedef struct type_info_t {
     res_t capacities;
     double price;
     int limit;
+    plim_t demands;
 } type_info_t;
 
 typedef struct problem_t {
@@ -22,7 +23,7 @@ typedef struct problem_t {
     type_info_t* types;
     int num_tasks;
     int num_types;
-    int total_limit;
+    plim_t limits;
     int charge_unit;
     int* rt_matrix;
 } problem_t;
@@ -52,6 +53,8 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
     ((problem)->rt_matrix[(task_id) * (problem)->num_types + (type_id)])
 
 #define problem_type(problem, type_id) ((problem)->types + type_id)
+#define problem_type_demands(problem, type_id) \
+    ((problem)->types[type_id].demands)
 #define problem_type_capacities(problem, type_id) \
     ((problem)->types[type_id].capacities)
 #define problem_type_price(problem, type_id) ((problem)->types[type_id].price)
