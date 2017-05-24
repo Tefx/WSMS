@@ -86,6 +86,10 @@ cdef class Problem:
     def types(self):
         return range(self.c.num_types)
 
+    @property
+    def total_limit(self):
+        return self.c.limits[0]
+
     @classmethod
     def load(cls, dax_name, type_file, total_limit, charge_unit,
              families=["c4"], path="resources"):

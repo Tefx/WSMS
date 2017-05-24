@@ -4,7 +4,7 @@ DEF RES_DIM = 2
 DEF LIM_DIM = 1
 
 cdef extern from "common.h":
-    ctypedef double vlen_t
+    ctypedef float vlen_t
     ctypedef vlen_t res_t[RES_DIM]
     ctypedef vlen_t plim_t[LIM_DIM];
 

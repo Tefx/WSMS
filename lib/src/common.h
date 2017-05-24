@@ -26,7 +26,7 @@
 #define RES_DIM 2
 #define LIM_DIM 1
 
-typedef double vlen_t;
+typedef float vlen_t;
 typedef vlen_t res_t[RES_DIM];
 typedef vlen_t plim_t[LIM_DIM];
 

@@ -12,7 +12,7 @@ cdef extern from "platform.h":
     int task_finish_time(task_t* task)
 
     ctypedef bin_t* machine_t
-    void machine_init(machine_t *machine)
+    void machine_init(machine_t *machine, int num_tasks)
     void machine_destory(machine_t *machine)
     void machine_set(machine_t* machine, plim_t demands)
 
@@ -30,7 +30,7 @@ cdef extern from "platform.h":
                                            res_t capacities)
 
     ctypedef bin_t* platform_t
-    void platform_init(platform_t *platform)
+    void platform_init(platform_t *platform, int total_limit)
     void platform_destory(platform_t *platform)
 
     int platform_earliest_position(platform_t *platform, machine_t *machine,

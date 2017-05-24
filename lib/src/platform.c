@@ -4,17 +4,12 @@
 
 /*#define copy2vol(vol, src, dim) memcpy((vol), (src), sizeof(vlen_t) * (dim))*/
 
-void task_set(task_t *task, int length, res_t demands) {
-    task_item(task)->start_node = task_item(task)->finish_node = NULL;
-    task_item(task)->length = length;
-    task_item(task)->demands = demands;
-}
-
-void machine_init(machine_t *machine) {
-    bin_init(machine_bin(machine), RES_DIM);
-    machine_item(machine)->start_node = machine_item(machine)->finish_node =
-        NULL;
-    machine_item(machine)->start_time = machine_item(machine)->length = 0;
+void machine_init(machine_t *machine, int num_tasks) {
+    bin_init(machine_bin(machine), RES_DIM, MIN(num_tasks, 4096));
+    machine_item(machine)->start_node = NULL;
+    machine_item(machine)->finish_node = NULL;
+    machine_item(machine)->start_time = 0;
+    machine_item(machine)->length = 0;
 }
 
 void machine_destory(machine_t *machine) { bin_destory(machine_bin(machine)); }
@@ -25,12 +20,18 @@ void machine_set(machine_t *machine, plim_t demands) {
 
 int machine_earliest_position(machine_t *machine, task_t *task, int est,
                               res_t capacities) {
-    return bin_earliest_position(machine_bin(machine), task_item(task), est,
-                                 capacities);
+    return bin_earliest_position_small(machine_bin(machine), task_item(task),
+                                       est, capacities);
+}
+
+int machine_earliest_position_forward(machine_t *machine, task_t *task, int est,
+                                      res_t capacities) {
+    return bin_earliest_position_forward_small(
+        machine_bin(machine), task_item(task), est, capacities);
 }
 
 int machine_place_task(machine_t *machine, task_t *task) {
-    return bin_place_item(machine_bin(machine), task_item(task));
+    return bin_place_item_small(machine_bin(machine), task_item(task));
 }
 
 void machine_shift_task(machine_t *machine, task_t *task, int delta) {
@@ -51,7 +52,6 @@ int machine_extendable_interval_finish(machine_t *machine, task_t *task,
 
 int platform_earliest_position(platform_t *platform, machine_t *machine,
                                int est, plim_t plim) {
-    machine_item(machine)->length = machine_runtime(machine);
     return bin_earliest_position(platform_bin(platform), machine_item(machine),
                                  est, plim);
 }

@@ -33,7 +33,7 @@ cdef class Machine:
     cdef set _tasks
 
     def __cinit__(self, Problem problem, int type_id):
-        machine_init(&self.c)
+        machine_init(&self.c, problem.num_tasks)
         self._problem = &problem.c
         self.type_id = type_id
         self._tasks = set()
@@ -92,7 +92,7 @@ cdef class Platform:
     cdef set _machines
 
     def __cinit__(self, Problem problem):
-        platform_init(&self.c)
+        platform_init(&self.c, problem.total_limit)
         self._limits = &problem.c.limits[0]
         self._machines = set()
 

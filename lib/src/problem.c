@@ -12,7 +12,11 @@ void problem_init(problem_t* problem, int num_tasks, int num_types,
     problem->types = (type_info_t*)malloc(sizeof(type_info_t) * num_types);
     problem->limits[0] = total_limit;
     problem->charge_unit = charge_unit;
-    problem->rt_matrix = (int*)malloc(sizeof(int) * num_tasks * num_types);
+    problem->rt_matrix =
+        (int**)malloc(sizeof(int*) * num_types * (num_tasks + 1));
+    for (int i = 0; i < num_types; ++i)
+        problem->rt_matrix[i] =
+            (int*)(problem->rt_matrix) + (i + 1) * num_tasks;
 }
 
 void problem_free(problem_t* problem) {
@@ -32,7 +36,7 @@ void problem_add_task(problem_t* problem, int task_id, res_t demands,
     memcpy(task->demands, demands, sizeof(vlen_t) * RES_DIM);
     task->num_prevs = num_prevs;
     task->num_nexts = num_nexts;
-    task->prevs = (int*)malloc(sizeof(int) * num_prevs);
+    task->prevs = (int*)malloc(sizeof(int) * (num_prevs + num_nexts));
     memcpy(task->prevs, prev_ids, sizeof(int) * num_prevs);
     task->nexts = (int*)malloc(sizeof(int) * num_nexts);
     memcpy(task->nexts, next_ids, sizeof(int) * num_nexts);
@@ -49,7 +53,8 @@ void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
 
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,
                          int runtime) {
-    problem->rt_matrix[task_id * problem->num_types + type_id] = runtime;
+    /*problem->rt_matrix[type_id * problem->num_tasks + task_id] = runtime;*/
+    problem->rt_matrix[type_id][task_id] = runtime;
 }
 
 int problem_task_average_runtime(problem_t* problem, int task_id) {

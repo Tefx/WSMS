@@ -1,5 +1,6 @@
 from WSMS.c.common cimport Resources
 from WSMS.c.problem cimport problem_t, Problem
+from libcpp cimport bool
 
 cdef extern from "schedule.h":
     struct machine_t
@@ -27,8 +28,8 @@ cdef extern from "schedule.h":
 
     void schedule_autofill_start_times(schedule_t* schedule, problem_t* problem)
     void schedule_autofill_finish_times(schedule_t* schedule, problem_t* problem)
-    void schedule_autofill_1(schedule_t* schedule, problem_t* problem,
-                             int* order, machine_t* vms)
+    void schedule_autofill(schedule_t* schedule, problem_t* problem,
+                             int* order, machine_t* vms, bool forward)
 
     int PL(schedule_t* schedule, int task_id)
     int TYP(schedule_t* schedule, int vm_id)

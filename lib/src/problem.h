@@ -25,7 +25,7 @@ typedef struct problem_t {
     int num_types;
     plim_t limits;
     int charge_unit;
-    int* rt_matrix;
+    int** rt_matrix;
 } problem_t;
 
 void problem_init(problem_t* problem, int num_tasks, int num_types,
@@ -50,7 +50,7 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
 #define problem_task_demands(problem, task_id) \
     ((problem)->tasks[task_id].demands)
 #define problem_task_runtime(problem, task_id, type_id) \
-    ((problem)->rt_matrix[(task_id) * (problem)->num_types + (type_id)])
+    ((problem)->rt_matrix[type_id][task_id])
 
 #define problem_type(problem, type_id) ((problem)->types + type_id)
 #define problem_type_demands(problem, type_id) \

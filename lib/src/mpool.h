@@ -13,9 +13,10 @@ typedef struct mempool_t {
   enode_t* fl_head;
   enode_t* bl_node;
   size_t block_size;
+  size_t buffer_size;
 } mempool_t;
 
-void mp_init(mempool_t* pool, size_t block_size);
+void mp_init(mempool_t* pool, size_t block_size, size_t buffer_size);
 
 void mp_destroy(mempool_t* pool);
 

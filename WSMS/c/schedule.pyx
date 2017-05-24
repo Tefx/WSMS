@@ -33,7 +33,10 @@ cdef class Schedule:
         schedule_set_finish_times(&self.c, finish_times.data.as_ints)
 
     def set_scheduling_order(self, array.array order):
-        schedule_autofill_1(&self.c, &self.problem.c, order.data.as_ints, NULL)
+        schedule_autofill(&self.c, &self.problem.c, order.data.as_ints, NULL, False)
+
+    def set_start_order(self, array.array order):
+        schedule_autofill(&self.c, &self.problem.c, order.data.as_ints, NULL, True)
 
     def set_objectives(self, objectives):
         self.c.objectives.core = objectives[0]

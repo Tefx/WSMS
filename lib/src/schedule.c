@@ -4,10 +4,12 @@
 #include <string.h>
 
 static inline int _earliest_start_time(task_info_t* task, int* finish_times) {
-    int est = 0;
-    int ft;
-    for (int i = 0; i < task->num_prevs; ++i) {
-        ft = finish_times[task->prevs[i]];
+    register int est = 0;
+    register int ft;
+    int num_prevs = task->num_prevs;
+    int* prevs = task->prevs;
+    while (num_prevs) {
+        ft = finish_times[prevs[--num_prevs]];
         iMAX(est, ft);
     }
     return est;
@@ -62,52 +64,72 @@ void schedule_autofill_finish_times(schedule_t* schedule, problem_t* problem) {
             problem_task_runtime(problem, i, TYPL(schedule, i));
 }
 
-// the fields of *placements* and *vm_types* must have been set.
-void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
-                         machine_t* vms) {
+void schedule_autofill(schedule_t* schedule, problem_t* problem, int* order,
+                       machine_t* vms, const bool forward) {
+    int num_tasks = schedule->num_tasks;
+    int num_vms = schedule->num_vms;
+    int* placements = schedule->placements;
+    int* vm_types = schedule->vm_types;
+    int* start_times = schedule->start_times;
+    int* finish_times = schedule->finish_times;
+    task_info_t* tasks = problem->tasks;
+    type_info_t* types = problem->types;
+    int** rt_matrix = problem->rt_matrix;
+    type_info_t* type_capacities =
+        (type_info_t*)((char*)problem->types + offsetof(type_info_t, capacities));
+    task_info_t* task_demands=
+        (task_info_t*)((char*)problem->tasks + offsetof(task_info_t, demands));
     machine_t* _vms =
-        vms ? vms : (machine_t*)malloc(sizeof(machine_t) * schedule->num_vms);
-    int task_id, vm_id, type_id;
-    int est;
-    machine_t* vm;
+        vms ? vms : (machine_t*)malloc(sizeof(machine_t) * num_vms);
     task_t task;
+    machine_t* vm;
+    register int task_id, vm_id, type_id;
+    register volume_t capacities, demands;
+    register int est, rt;
 
-    for (int i = 0; i < schedule->num_vms; ++i) {
-        machine_init(_vms + i);
-        machine_set(_vms + i, problem_type_demands(problem, schedule->vm_types[i]));
+    for (int i = 0; i < num_vms; ++i) {
+        vm = _vms + i;
+        machine_init(vm, num_tasks);
+        machine_set(vm, types[vm_types[i]].demands);
     }
 
-    for (int i = 0; i < schedule->num_tasks; ++i) {
+    for (int i = 0; i < num_tasks; ++i) {
         task_id = order[i];
-        vm_id = schedule->placements[task_id];
-        type_id = schedule->vm_types[vm_id];
+        vm_id = placements[task_id];
+        type_id = vm_types[vm_id];
         vm = _vms + vm_id;
-        task_set(&task, problem_task_runtime(problem, task_id, type_id),
-                 problem_task_demands(problem, task_id));
-        est = _earliest_start_time(problem->tasks + task_id,
-                                   schedule->finish_times);
-        schedule->start_times[task_id] = machine_earliest_position(
-            vm, &task, est, problem_type_capacities(problem, type_id));
-        schedule->finish_times[task_id] = machine_place_task(vm, &task);
+        /*capacities = types[type_id].capacities;*/
+        /*demands = tasks[task_id].demands;*/
+        capacities = (volume_t)(type_capacities + type_id);
+        demands = (volume_t)(task_demands + task_id);
+        rt = rt_matrix[type_id][task_id];
+        task_set(&task, rt, demands);
+        est = _earliest_start_time(tasks + task_id, finish_times);
+        start_times[task_id] =
+            forward
+                ? machine_earliest_position_forward(vm, &task, est, capacities)
+                : machine_earliest_position(vm, &task, est, capacities);
+        finish_times[task_id] = machine_place_task(vm, &task);
     }
+
 
     int t0 = INT_MAX, t1 = 0;
     int ot, ct;
     double cost = 0;
 
-    for (int i = 0; i < schedule->num_vms; ++i) {
+    for (int i = 0; i < num_vms; ++i) {
         vm = _vms + i;
         ot = machine_open_time(vm);
         ct = machine_close_time(vm);
         t0 = MIN(t0, ot);
         t1 = MAX(t1, ct);
-        cost += problem_charge(problem, TYP(schedule, i), ct - ot);
+        cost += problem_charge(problem, vm_types[i], ct - ot);
     }
 
     schedule->objectives = (objectives_t){(t1 - t0), cost};
 
     if (!vms) {
-        for (int i = 0; i < schedule->num_vms; ++i) machine_destory(_vms + i);
+        for (int i = 0; i < num_vms; ++i) machine_destory(_vms + i);
         free(_vms);
     }
 }

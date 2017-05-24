@@ -31,8 +31,8 @@ void schedule_set_objectives(schedule_t* schedule, int makespan, double cost);
 void schedule_autofill_start_times(schedule_t* schedule, problem_t* problem);
 void schedule_autofill_finish_times(schedule_t* schedule, problem_t* problem);
 
-void schedule_autofill_1(schedule_t* schedule, problem_t* problem, int* order,
-                         machine_t* vms);
+void schedule_autofill(schedule_t* schedule, problem_t* problem, int* order,
+                         machine_t* vms, bool forward);
 
 #define PL(schedule, task_id) ((schedule)->placements[task_id])
 #define TYP(schedule, type_id) ((schedule)->vm_types[type_id])
