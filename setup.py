@@ -6,9 +6,14 @@ extensions = [
     Extension(
         name="*",
         sources=["WSMS/c/*.pyx"],
-        extra_compile_args=['-Ofast', '-march=native', '-ffast-math'],
-        # extra_link_args=["-static"],
-        # extra_objects=["./lib/libwsms.a", "./lib/libwsms_extra.a"],
+        extra_compile_args=[
+            '-Ofast',
+            '-march=native',
+            '-ffast-math',
+            '-funroll-loops',
+            # '-g',
+            # '-fno-omit-frame-pointer',
+        ],
         libraries=['wsms', "wsms_extra"],
         library_dirs=['./lib'],
         include_dirs=["./lib/src"])

@@ -17,7 +17,8 @@ cdef class Problem:
         problem_init(&self.c, len(tasks), len(mtypes), total_limit, charge_unit)
 
         for i, rtid in enumerate(self.r_task_ids):
-            res[0], res[1] = tasks[rtid]["demands"]
+            res[0] = ceil(tasks[rtid]["demands"][0] * 1000)
+            res[1] = ceil(tasks[rtid]["demands"][1])
             prevs = array.array("i", [self.r_task_ids.index(t) for t in tasks[rtid]["prevs"]])
             nexts = array.array("i", [self.r_task_ids.index(t) for t in tasks[rtid]["nexts"]])
             problem_add_task(&self.c, i, res,
@@ -25,7 +26,8 @@ cdef class Problem:
                              nexts.data.as_ints, len(nexts))
 
         for i, rmid in enumerate(self.r_type_ids):
-            res[0], res[1] = mtypes[rmid]["capacities"]
+            res[0] = ceil(mtypes[rmid]["capacities"][0] * 1000)
+            res[1] = ceil(mtypes[rmid]["capacities"][1])
             problem_add_type(&self.c, i, res,
                              mtypes[rmid]["price"], mtypes[rmid]["limit"])
 

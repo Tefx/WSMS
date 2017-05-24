@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.7)
 project(wmsm_lib)
 
 set(CMAKE_C_STANDARD 11)
-#set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer -O3 -march=native -ffast-math -msse4.1 -funroll-loops")
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -ffast-math -msse4.1 -funroll-loops")
+#set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer -Ofast -march=native -ffast-math -funroll-loops")
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -ffast-math -funroll-loops")
 set(CMAKE_SOURCE_DIR src)
 
 set(SOURCE_FILES_COMMON common.h common.c)

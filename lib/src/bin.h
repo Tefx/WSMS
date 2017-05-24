@@ -8,8 +8,8 @@
 typedef vlen_t* volume_t;
 
 typedef struct bin_node_t {
-    list_node_t list;
     int time;
+    list_node_t list;
 } bin_node_t;
 
 #define bnode_real_size(dim) (sizeof(bin_node_t) + sizeof(vlen_t) * (dim))

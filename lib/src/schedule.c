@@ -75,17 +75,17 @@ void schedule_autofill(schedule_t* schedule, problem_t* problem, int* order,
     task_info_t* tasks = problem->tasks;
     type_info_t* types = problem->types;
     int** rt_matrix = problem->rt_matrix;
-    type_info_t* type_capacities =
-        (type_info_t*)((char*)problem->types + offsetof(type_info_t, capacities));
-    task_info_t* task_demands=
-        (task_info_t*)((char*)problem->tasks + offsetof(task_info_t, demands));
+    /*type_info_t* type_capacities =*/
+        /*(type_info_t*)((char*)problem->types + offsetof(type_info_t, capacities));*/
+    /*task_info_t* task_demands=*/
+        /*(task_info_t*)((char*)problem->tasks + offsetof(task_info_t, demands));*/
     machine_t* _vms =
         vms ? vms : (machine_t*)malloc(sizeof(machine_t) * num_vms);
     task_t task;
     machine_t* vm;
-    register int task_id, vm_id, type_id;
-    register volume_t capacities, demands;
-    register int est, rt;
+    int task_id, vm_id, type_id;
+    volume_t capacities;
+    int est;
 
     for (int i = 0; i < num_vms; ++i) {
         vm = _vms + i;
@@ -98,13 +98,9 @@ void schedule_autofill(schedule_t* schedule, problem_t* problem, int* order,
         vm_id = placements[task_id];
         type_id = vm_types[vm_id];
         vm = _vms + vm_id;
-        /*capacities = types[type_id].capacities;*/
-        /*demands = tasks[task_id].demands;*/
-        capacities = (volume_t)(type_capacities + type_id);
-        demands = (volume_t)(task_demands + task_id);
-        rt = rt_matrix[type_id][task_id];
-        task_set(&task, rt, demands);
+        task_set(&task, rt_matrix[type_id][task_id], tasks[task_id].demands);
         est = _earliest_start_time(tasks + task_id, finish_times);
+        capacities = types[type_id].capacities;
         start_times[task_id] =
             forward
                 ? machine_earliest_position_forward(vm, &task, est, capacities)

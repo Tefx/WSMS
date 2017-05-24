@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <x86intrin.h>
 
 #define _next(node) list_entry((node)->list.next, bin_node_t, list)
 #define _prev(node) list_entry((node)->list.prev, bin_node_t, list)
 
 void print_node(bin_node_t* node, int dim) {
     printf("[%d, <", node->time);
-    for (int i = 0; i < dim; ++i) printf("%.2f,", bnode_usage(node)[i]);
+    for (int i = 0; i < dim; ++i) printf("%.2f,", bnode_usage(node)[i] / 100.0);
     printf("\b>]");
 }
 
@@ -56,24 +57,14 @@ static inline bool volume_eq(volume_t a, volume_t b, int dim) {
 #define volume_iadd_v(a, v, dim) \
     for (int i = 0; i < (dim); ++i) (a)[i] += (v)
 
-#if RES_DIM == 1
-
-#define volume_le_small(a, b) fle((a)[0], (b)[0])
-#define volume_le_precise_small(a, b) ((a)[0] < (b)[0])
-#define volume_eq_small(a, b) feq((a)[0], (b)[0])
-#define volume_ineg_small(a) (a)[0] = -(a)[0]
-#define volume_iadd_small(a, b) (a)[0] += (b)[0]
-#define volume_isub_small(a, b) (a)[0] -= (b)[0]
-#define volume_sub_small(c, a, b) (c)[0] = (a)[0] - (b)[0]
-#define volume_iadd_v_small(a, v) (a)[0] += v
-
-#elif RES_DIM == 2
+#if RES_DIM == 2
 
 #define volume_le_small(a, b) (fle((a)[0], (b)[0]) && fle((a)[1], (b)[1]))
 #define volume_le_precise_small(a, b) ((a)[0] < (b)[0] && (a)[1] < (b)[1])
 #define volume_eq_small(a, b) (feq((a)[0], (b)[0]) && feq((a)[1], (b)[1]))
-#define volume_ineg_small(a) \
-    (a)[0] = -(a)[0];        \
+
+#define volume_ineg_small(a, b) \
+    (a)[0] = -(a)[0];           \
     (a)[1] = -(a)[1]
 #define volume_iadd_small(a, b) \
     (a)[0] += (b)[0];           \
@@ -82,22 +73,25 @@ static inline bool volume_eq(volume_t a, volume_t b, int dim) {
     (a)[0] -= (b)[0];           \
     (a)[1] -= (b)[1]
 #define volume_sub_small(c, a, b) \
-    (c)[0] = (a)[0] - (b)[0], (c)[1] = (a)[1] - (b)[1]
+    (c)[0] = (a)[0] - (b)[0];     \
+    (c)[1] = (a)[1] - (b)[1]
 #define volume_iadd_v_small(a, v) \
     (a)[0] += v;                  \
     (a)[1] += v
-
 #else
-
 #define volume_le_small(a, b) volume_le(a, b, RES_DIM)
 #define volume_le_precise_small(a, b) volume_le_precise(a, b, RES_DIM)
 #define volume_eq_small(a, b) volume_eq(a, b, RES_DIM)
-#define volume_ineg_small(a) volume_ineg(a, RES_DIM)
-#define volume_iadd_small(a, b) volume_iadd(a, b, RES_DIM)
-#define volume_isub_small(a, b) volume_isub(a, b, RES_DIM)
-#define volume_sub_small(c, a, b) volume_sub(c, a, b, RES_DIM)
-#define volume_iadd_v_small(a, v) volume_iadd_v(a, v, RES_DIM)
-
+#define volume_ineg_small(a) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] = -(a)[i]
+#define volume_iadd_small(a, b) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] += (b)[i]
+#define volume_isub_small(a, b) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] -= (b)[i]
+#define volume_sub_small(c, a, b) \
+    for (int i = 0; i < RES_DIM; ++i) (c)[i] = (a)[i] - (b)[i]
+#define volume_iadd_v_small(a, v) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] += v
 #endif
 
 static inline void _set_volume(bin_node_t* node, double x, int dim) {
@@ -156,16 +150,6 @@ static inline bin_node_t* _search_node(bin_t* bin, int time) {
     bin_node_t* node = _prev(bin->head);
     while (node->time > time) node = _prev(node);
     return node;
-}
-
-static inline bin_node_t* _search_forward(bin_node_t* start_node, int time) {
-    while (1)
-        if (start_node->time == time)
-            return start_node;
-        else if (start_node->time < time)
-            start_node = _next(start_node);
-        else
-            return _prev(start_node);
 }
 
 static inline bin_node_t* _earliest_slot(bin_node_t* node, int est, int length,
