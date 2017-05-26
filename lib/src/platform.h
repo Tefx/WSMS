@@ -8,8 +8,9 @@
 typedef item_t task_t;
 #define task_item(task) (task)
 
-inline void task_prepare(task_t* task, problem_t* problem, int task_id, int type_id) {
-    task_t* item = task_item(task);
+inline void task_prepare(task_t *task, problem_t *problem, int task_id,
+                         int type_id) {
+    task_t *item = task_item(task);
     item->start_node = item->finish_node = NULL;
     item->length = problem_task_runtime(problem, task_id, type_id);
     item->demands = problem_task_demands(problem, task_id);
@@ -24,9 +25,11 @@ typedef struct machine_t {
     item_t item;
 } machine_t;
 
+#define machine_create_mpool(buffer_size) bnode_create_mpool(RES_DIM, buffer_size)
+
 #define machine_bin(machine) (&(machine)->bin)
 #define machine_item(machine) (&(machine)->item)
-void machine_init(machine_t *machine, int num_tasks);
+void machine_init(machine_t *machine, mempool_t *mpool);
 void machine_destory(machine_t *machine);
 #define machine_set_demands(machine, dmnd) \
     machine_item(machine)->demands = (dmnd)
@@ -34,9 +37,11 @@ void machine_destory(machine_t *machine);
 #define machine_print(machine) bin_print(machine_bin(machine))
 
 typedef bin_t platform_t;
+#define platform_create_mpool(buffer_size) bnode_create_mpool(LIM_DIM, buffer_size)
+
 #define platform_bin(platform) (platform)
-#define platform_init(platform, total_limit) \
-    bin_init(platform_bin(platform), LIM_DIM, MIN((total_limit), 4096))
+#define platform_init(platform, mpool) \
+    bin_init(platform_bin(platform), LIM_DIM, mpool)
 #define platform_destory(platform) bin_destory(platform_bin(platform))
 #define platform_print(platform) bin_print(platform_bin(platform))
 

@@ -1,6 +1,8 @@
 from WSMS.c.common cimport Resources
 from WSMS.c.problem cimport problem_t, Problem
 from WSMS.c.platform cimport Platform
+from WSMS.c.mpool cimport MemPool, mempool_t
+
 from libcpp cimport bool
 
 cdef extern from "schedule.h":
@@ -32,9 +34,9 @@ cdef extern from "schedule.h":
     void schedule_set_start_times(schedule_t* schedule, int* start_times)
 
     void schedule_simulate(schedule_t* schedule, problem_t* problem,
-                           int* order, bool forward)
-    void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem);
-    void schedule_calculate_pnvm(schedule_t* schedule, problem_t* problem);
+                           int* order, bool forward, mempool_t* pool)
+    void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem)
+    void schedule_calculate_pnvm(schedule_t* schedule, problem_t* problem)
 
     int PL(schedule_t* schedule, int task_id)
     int TYP(schedule_t* schedule, int vm_id)

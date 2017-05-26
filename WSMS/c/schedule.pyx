@@ -10,11 +10,13 @@ cdef class Schedule:
     cdef schedule_t c
     cdef Problem problem
     cdef bool _calculated
+    cdef mempool_t* _mpool
 
-    def __init__(self, Problem problem):
+    def __cinit__(self, Problem problem):
         self.problem = problem
         schedule_init(&self.c, problem.num_tasks)
         self._calculated = False
+        self._mpool = NULL
 
     def __dealloc__(self):
         schedule_free(&self.c)
@@ -47,11 +49,14 @@ cdef class Schedule:
     def set_start_times(self, array.array start_times):
         schedule_set_start_times(&self.c, start_times.data.as_ints)
 
+    def set_mempool(self, MemPool mpool):
+        self._mpool = mpool.c_ptr
+
     def set_scheduling_order(self, array.array order):
-        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, False)
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, False, self._mpool)
 
     def set_start_order(self, array.array order):
-        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, True)
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, True, self._mpool)
 
     def PL(self, int task_id):
         return PL(&self.c, task_id)

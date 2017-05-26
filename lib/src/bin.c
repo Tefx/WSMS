@@ -31,11 +31,11 @@ static inline void _set_volume(bin_node_t* node, double x, int dim) {
     for (int i = 0; i < dim; ++i) bnode_usage(node)[i] = x;
 }
 
-#define _alloc_node(bin) ((bin_node_t*)mp_alloc(&(bin)->pool))
+#define _alloc_node(bin) ((bin_node_t*)mp_alloc(bin->pool))
 
 static inline void _delete_node(bin_t* bin, bin_node_t* node) {
     list_delete(&(node)->list);
-    mp_free(&(bin)->pool, node);
+    mp_free(bin->pool, node);
 }
 
 static inline bin_node_t* _clone_node(bin_t* bin, bin_node_t* prev_node,
@@ -48,9 +48,10 @@ static inline bin_node_t* _clone_node(bin_t* bin, bin_node_t* prev_node,
     return node;
 }
 
-void bin_init(bin_t* bin, int dim, int node_buffer_size) {
+void bin_init(bin_t* bin, int dim, mempool_t* pool) {
     bin->volume_dim = dim;
-    mp_init(&bin->pool, bnode_real_size(dim), node_buffer_size);
+    /*mp_init(&bin->pool, bnode_real_size(dim), node_buffer_size);*/
+    bin->pool = pool;
     bin->head = _alloc_node(bin);
     bin->head->time = -INT_MAX;
     _set_volume(bin->head, 0, dim);
@@ -63,7 +64,17 @@ void bin_init(bin_t* bin, int dim, int node_buffer_size) {
     bin->last_start_node = bin->head;
 }
 
-void bin_destory(bin_t* bin) { mp_destroy(&bin->pool); }
+void bin_destory(bin_t* bin) {
+    mempool_t* pool = bin->pool;
+    bin_node_t* head = bin->head;
+    bin_node_t* node = head;
+    bin_node_t* tmp;
+    do {
+        tmp = node;
+        node = _next(node);
+        mp_free(pool, tmp);
+    } while (node != head);
+}
 
 int bin_open_time(bin_t* bin) {
     bin_node_t* tmp = _next(bin->head);
@@ -128,8 +139,7 @@ int bin_earliest_position(bin_t* bin, item_t* item, int est, volume_t cap) {
     return MAX(est, item->start_node->time);
 }
 
-int bin_earliest_position_res(bin_t *bin, item_t *item, int est,
-                              volume_t cap) {
+int bin_earliest_position_res(bin_t* bin, item_t* item, int est, volume_t cap) {
     res_sub(bin->vol_tmp, cap, item->demands);
     item->start_node = _earliest_slot_small(_search_node(bin, est), est,
                                             item->length, bin->vol_tmp);
@@ -154,7 +164,7 @@ int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
     return item->start_time = MAX(est, node->time);
 }
 
-int bin_earliest_position_forward_res(bin_t *bin, item_t *item, int est,
+int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
                                       volume_t cap) {
     bin_node_t* node = bin->last_start_node;
     if (node->time < est) {
@@ -234,7 +244,7 @@ int bin_place_item(bin_t* bin, item_t* item) {
     return ft;
 }
 
-int bin_place_item_res(bin_t *bin, item_t *item) {
+int bin_place_item_res(bin_t* bin, item_t* item) {
     int st = item->start_time;
     int ft = st + item->length;
     item->finish_node =

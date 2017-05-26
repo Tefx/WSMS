@@ -89,7 +89,7 @@ void schedule_set_start_times(schedule_t* schedule, int* start_times) {
 }
 
 void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
-                       bool forward) {
+                       bool forward, mempool_t* mpool) {
     int num_tasks = schedule->num_tasks;
     int num_vms = schedule->num_vms;
 
@@ -103,6 +103,8 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
     int* finish_times = schedule->_finish_times;
     task_info_t* tasks = problem->tasks;
     type_info_t* types = problem->types;
+    bool new_mpool = mpool == NULL;
+    if (new_mpool) mpool = machine_create_mpool(num_tasks);
 
     machine_t* _vms = (machine_t*)malloc(sizeof(machine_t) * num_vms);
     task_t task;
@@ -113,7 +115,7 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
 
     for (int i = 0; i < num_vms; ++i) {
         vm = _vms + i;
-        machine_init(vm, num_tasks);
+        machine_init(vm, mpool);
         machine_set_demands(vm, types[vm_types[i]].demands);
     }
 
@@ -139,6 +141,7 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
         machine_destory(_vms + i);
     }
     free(_vms);
+    if (new_mpool) mp_free_pool(mpool);
 }
 
 void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem) {

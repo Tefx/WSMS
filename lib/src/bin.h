@@ -12,6 +12,7 @@ typedef struct bin_node_t {
 
 #define bnode_real_size(dim) (sizeof(bin_node_t) + sizeof(vlen_t) * (dim))
 #define bnode_usage(x) ((volume_t)((x) + 1))
+#define bnode_create_mpool(dim, size) mp_create_pool(bnode_real_size(dim), size)
 
 typedef struct item_t {
     bin_node_t* start_node;
@@ -23,7 +24,7 @@ typedef struct item_t {
 
 typedef struct bin_t {
     bin_node_t* head;
-    mempool_t pool;
+    mempool_t* pool;
     int volume_dim;
     vlen_t* vol_tmp;
     bin_node_t* last_start_node;
@@ -32,7 +33,7 @@ typedef struct bin_t {
 void bin_print(bin_t* bin);
 #define bin_is_empty(bin) ((bin)->head->list.next->next == &(bin)->head->list)
 
-void bin_init(bin_t* bin, int dim, int node_buffer_size);
+void bin_init(bin_t* bin, int dim, mempool_t* mpool);
 void bin_destory(bin_t* bin);
 void bin_shift(bin_t* bin, int delta);
 
@@ -42,14 +43,14 @@ int bin_span(bin_t* bin);
 
 int bin_earliest_position(bin_t* bin, item_t* item, int est,
                           volume_t capacities);
-int bin_earliest_position_res(bin_t *bin, item_t *item, int est,
+int bin_earliest_position_res(bin_t* bin, item_t* item, int est,
                               volume_t capacities);
 int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
-                                   volume_t cap);
-int bin_earliest_position_forward_res(bin_t *bin, item_t *item, int est,
+                                  volume_t cap);
+int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
                                       volume_t cap);
 int bin_place_item(bin_t* bin, item_t* item);
-int bin_place_item_res(bin_t *bin, item_t *item);
+int bin_place_item_res(bin_t* bin, item_t* item);
 void bin_extend_item(bin_t* bin, item_t* item, int st, int ft);
 void bin_shift_item(bin_t* bin, item_t* item, int delta);
 int bin_extendable_interval_start(bin_t*, item_t* item, volume_t capacities);

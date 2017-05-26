@@ -3,8 +3,8 @@
 #include <string.h>
 
 
-void machine_init(machine_t *machine, int num_tasks) {
-    bin_init(machine_bin(machine), RES_DIM, MIN(num_tasks, 4096));
+void machine_init(machine_t *machine, mempool_t* mpool) {
+    bin_init(machine_bin(machine), RES_DIM, mpool);
     machine_item(machine)->start_node = NULL;
     machine_item(machine)->finish_node = NULL;
     machine_item(machine)->start_time = 0;

@@ -1,5 +1,6 @@
 from WSMS.c.common cimport vlen_t, Resources
 from WSMS.c.problem cimport *
+from WSMS.c.mpool cimport MemPool, mempool_t, mp_free_pool
 
 
 cdef extern from "platform.h":
@@ -14,7 +15,8 @@ cdef extern from "platform.h":
     int task_finish_time(task_t* task)
 
     ctypedef bin_t* machine_t
-    void machine_init(machine_t *machine, int num_tasks)
+    mempool_t* machine_create_mpool(int buffer_size)
+    void machine_init(machine_t *machine, mempool_t* mpool)
     void machine_destory(machine_t *machine)
     void machine_set_demands(machine_t* machine, vlen_t* demands)
     void machine_set_runtime(machine_t* machine, int runtime)
@@ -35,7 +37,9 @@ cdef extern from "platform.h":
                                            vlen_t* capacities)
 
     ctypedef bin_t* platform_t
-    void platform_init(platform_t *platform, int total_limit)
+    mempool_t* platform_create_mpool(int buffer_size)
+
+    void platform_init(platform_t *platform, mempool_t* mpool)
     void platform_destory(platform_t *platform)
 
     void platform_print(platform_t* platform)
@@ -64,9 +68,13 @@ cdef class Machine:
     cdef int _type_id
     cdef problem_t* _problem
     cdef set _tasks
+    cdef mempool_t* _mpool
+    cdef bool _own_mpool
 
 
 cdef class Platform:
     cdef platform_t c
     cdef vlen_t* _limits
     cdef set _machines
+    cdef mempool_t* _mpool
+    cdef bool _own_mpool

@@ -32,7 +32,7 @@ void schedule_set_vm_types(schedule_t* schedule, int* vm_types, int num_vms);
 void schedule_set_start_times(schedule_t* schedule, int* start_times);
 
 void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
-                       bool forward);
+                       bool forward, mempool_t* mpool);
 
 void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem);
 int schedule_calculate_pnvm(schedule_t* schedule, problem_t* problem);
