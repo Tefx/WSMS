@@ -51,9 +51,23 @@ void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
     type->demands[0] = 1;
 }
 
+/*int _compare_types(const void* type_a, const void* type_b) {*/
+    /*vlen_t* a = ((type_info_t*)type_a)->capacities;*/
+    /*vlen_t* b = ((type_info_t*)type_b)->capacities;*/
+    /*int res = 0;*/
+    /*for (int i = 0; i < RES_DIM; ++i) {*/
+        /*res = a[i] - b[i];*/
+        /*if (res != 0) break;*/
+    /*}*/
+    /*return res;*/
+/*}*/
+
+/*void _sort_types(problem_t* problem) {*/
+    /*qsort(problem->types, problem->num_types, sizeof(type_info_t), _compare_types);*/
+/*}*/
+
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,
                          int runtime) {
-    /*problem->rt_matrix[type_id * problem->num_tasks + task_id] = runtime;*/
     problem->rt_matrix[type_id][task_id] = runtime;
 }
 

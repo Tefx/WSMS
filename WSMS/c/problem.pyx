@@ -13,7 +13,7 @@ cdef class Problem:
         cdef int rt
 
         self.r_task_ids = list(tasks.keys())
-        self.r_type_ids = list(mtypes.keys())
+        self.r_type_ids = sorted(mtypes.keys(), key=lambda x:mtypes[x]["capacities"])
         problem_init(&self.c, len(tasks), len(mtypes), total_limit, charge_unit)
 
         for i, rtid in enumerate(self.r_task_ids):
@@ -61,6 +61,27 @@ cdef class Problem:
         cdef task_info_t* task = problem_task(&self.c, task_id)
         return [task.nexts[i] for i in range(task.num_prevs)]
 
+    def valid_types_for_task(self, int task_id):
+        cdef vlen_t* demands = problem_task_demands(&self.c, task_id)
+        cdef vlen_t* capacities
+
+        result = []
+        for type_id in range(self.c.num_types-1, -1, -1):
+            capacities = problem_type_capacities(&self.c, type_id)
+            if res_le(demands, capacities):
+                result.append(type_id)
+            else:
+                break
+        return list(reversed(result))
+
+    def min_type_for_task(self, int task_id):
+        cdef vlen_t* demands = problem_task_demands(&self.c, task_id)
+        cdef vlen_t* capacities
+        for type_id in range(self.c.num_types):
+            capacities = problem_type_capacities(&self.c, type_id)
+            if res_le(demands, capacities):
+                return type_id
+
     def type_capacities(self, int type_id):
         res = Resources()
         res._setc(problem_type_capacities(&self.c, type_id))
@@ -71,6 +92,11 @@ cdef class Problem:
 
     def charge(self, int type_id, int runtime):
         return problem_charge(&self.c, type_id, runtime)
+
+    def type_le(self, int tid_0, int tid_1):
+        cdef vlen_t* cap0 = problem_type_capacities(&self.c, tid_0)
+        cdef vlen_t* cap1 = problem_type_capacities(&self.c, tid_1)
+        return res_le(cap0, cap1)
 
     @property
     def num_tasks(self):

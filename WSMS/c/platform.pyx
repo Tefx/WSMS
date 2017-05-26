@@ -1,11 +1,7 @@
 from cpython cimport array
 import array
 
-
 cdef class Task:
-    cdef task_t c
-    cdef int _task_id
-
     def __cinit__(self, int task_id):
         self._task_id = task_id
 
@@ -15,6 +11,10 @@ cdef class Task:
     @property
     def start_time(self):
         return task_start_time(&self.c)
+
+    @start_time.setter
+    def start_time(self, st):
+        task_set_start_time(&self.c, st)
 
     @property
     def finish_time(self):
@@ -26,33 +26,31 @@ cdef class Task:
 
 
 cdef class Machine:
-    cdef machine_t c
-    cdef int _type_id
-    cdef res_t _capacities
-    cdef problem_t* _problem
-    cdef set _tasks
-
-    def __cinit__(self, Problem problem, int type_id):
+    def __cinit__(self, Problem problem):
         machine_init(&self.c, problem.num_tasks)
         self._problem = &problem.c
-        self.type_id = type_id
         self._tasks = set()
 
     def __dealloc__(self):
         machine_destory(&self.c)
 
-    def earliest_position(self, Task task, int est):
-        cdef int task_id = task._task_id
-        task_set(&task.c,
-                 problem_task_runtime(self._problem, task_id, self._type_id),
-                 problem_task_demands(self._problem, task_id))
-        return machine_earliest_position(&self.c, &task.c, est, self._capacities)
+    def prepare(self, Task task, int type_id):
+        cdef rt = problem_task_runtime(self._problem, task._task_id, self._type_id)
+        task_prepare(&task.c, self._problem, task._task_id, self._type_id)
+        self.type_id = type_id
+        machine_set_runtime(&self.c, rt)
 
-    def place_task(self, Task task):
+    def earliest_position(self, Task task, int est, int type_id=-1):
+        if type_id < 0: type_id = self._type_id
+        cdef volume_t capacities = problem_type_capacities(self._problem, type_id)
+        task_prepare(&task.c, self._problem, task._task_id, type_id)
+        return machine_earliest_position(&self.c, &task.c, est, capacities)
+
+    def place(self, Task task):
         self._tasks.add(task)
         return machine_place_task(&self.c, &task.c)
 
-    def shift_task(self, Task task, int delta):
+    def shift(self, Task task, int delta):
         machine_shift_task(&self.c, &task.c, delta)
 
     @property
@@ -62,8 +60,7 @@ cdef class Machine:
     @type_id.setter
     def type_id(self, type_id):
         self._type_id = type_id
-        self._capacities = problem_type_capacities(self._problem, type_id)
-        machine_set(&self.c, problem_type_demands(self._problem, type_id))
+        machine_set_demands(&self.c, problem_type_demands(self._problem, type_id))
 
     @property
     def open_time(self):
@@ -77,20 +74,28 @@ cdef class Machine:
     def runtime(self):
         return machine_runtime(&self.c)
 
+    @runtime.setter
+    def runtime(self, runtime):
+        machine_set_runtime(&self.c, runtime)
+
     @property
     def cost(self):
         return problem_charge(self._problem, self._type_id, machine_runtime(&self.c))
+
+    def cost_increase(self, Task task, int type_id):
+        cdef int st = min(machine_open_time(&self.c), task.start_time)
+        cdef int rt = max(machine_close_time(&self.c), task.finish_time) - st
+        return problem_charge(self._problem, type_id, rt) - self.cost
 
     @property
     def tasks(self):
         return self._tasks
 
+    def print_bin(self):
+        machine_print(&self.c)
+
 
 cdef class Platform:
-    cdef platform_t c
-    cdef vlen_t* _limits
-    cdef set _machines
-
     def __cinit__(self, Problem problem):
         platform_init(&self.c, problem.total_limit)
         self._limits = &problem.c.limits[0]
@@ -102,14 +107,14 @@ cdef class Platform:
     def earliest_position(self, Machine machine, int est):
         return platform_earliest_position(&self.c, &machine.c, est, self._limits)
 
-    def provision_machine(self, Machine machine):
-        self._machines.add(machine)
-        return platform_place_machine(&self.c, &machine.c)
+    def update(self, Machine machine):
+        if machine not in self._machines:
+            self._machines.add(machine)
+            platform_place_machine(&self.c, &machine.c)
+        else:
+            platform_extend_machine(&self.c, &machine.c)
 
-    def extend_machine(self, Machine machine):
-        platform_extend_machine(&self.c, &machine.c)
-
-    def shift_machine(self, Machine machine, int delta):
+    def shift(self, Machine machine, int delta):
         platform_shift_machine(&self.c, &machine.c, delta)
 
     def extendable_interval(self, Machine machine):
@@ -120,3 +125,6 @@ cdef class Platform:
     @property
     def machines(self):
         return self._machines
+
+    def print_bin(self):
+        platform_print(&self.c)

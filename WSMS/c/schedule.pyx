@@ -1,21 +1,39 @@
 from libc.stdlib cimport malloc, free
 from cpython cimport array
 import array
-
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import os.path
 
+
 cdef class Schedule:
     cdef schedule_t c
     cdef Problem problem
+    cdef bool _calculated
 
     def __init__(self, Problem problem):
         self.problem = problem
         schedule_init(&self.c, problem.num_tasks)
+        self._calculated = False
 
     def __dealloc__(self):
         schedule_free(&self.c)
+
+    @classmethod
+    def from_platform(cls, Problem problem, Platform platform):
+        placements = array.array("i", [0] * problem.num_tasks)
+        start_times = array.array("i", [0] * problem.num_tasks)
+        vm_types = array.array("i")
+        for m_id, machine in enumerate(platform.machines):
+            vm_types.append(machine.type_id)
+            for task in machine.tasks:
+                placements[task.task_id] = m_id
+                start_times[task.task_id] = task.start_time
+        schedule = cls(problem)
+        schedule.placements = placements
+        schedule.vm_types = vm_types
+        schedule.start_times = start_times
+        return schedule
 
     def __setattr__(self, attr, value):
         getattr(self, "set_"+attr)(value)
@@ -29,24 +47,11 @@ cdef class Schedule:
     def set_start_times(self, array.array start_times):
         schedule_set_start_times(&self.c, start_times.data.as_ints)
 
-    def set_finish_times(self, array.array finish_times):
-        schedule_set_finish_times(&self.c, finish_times.data.as_ints)
-
     def set_scheduling_order(self, array.array order):
-        schedule_autofill(&self.c, &self.problem.c, order.data.as_ints, NULL, False)
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, False)
 
     def set_start_order(self, array.array order):
-        schedule_autofill(&self.c, &self.problem.c, order.data.as_ints, NULL, True)
-
-    def set_objectives(self, objectives):
-        self.c.objectives.core = objectives[0]
-        self.c.objectives.memory = objectives[1]
-
-    def autofill_start_times(self):
-        schedule_autofill_start_times(&self.c, &self.problem.c)
-
-    def autofill_finish_times(self):
-        schedule_autofill_finish_times(&self.c, &self.problem.c)
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, True)
 
     def PL(self, int task_id):
         return PL(&self.c, task_id)
@@ -65,13 +70,33 @@ cdef class Schedule:
 
     @property
     def objectives(self):
-        return self.c.objectives
+        if not self._calculated:
+            schedule_calculate_objectives(&self.c, &self.problem.c)
+            schedule_calculate_pnvm(&self.c, &self.problem.c)
+            self._calculated = True
+        return schedule_objectives(&self.c)
+
+    @property
+    def pnvm(self):
+        if not self._calculated:
+            schedule_calculate_objectives(&self.c, &self.problem.c)
+            schedule_calculate_pnvm(&self.c, &self.problem.c)
+            self._calculated = True
+        return schedule_pnvm(&self.c)
 
     @property
     def vms(self):
         return range(self.c.num_vms)
 
+    @property
+    def num_vms(self):
+        return self.c.num_vms
+
     def utilization(self, int vm_id):
+        if not self._calculated:
+            schedule_calculate_objectives(&self.c, &self.problem.c)
+            schedule_calculate_pnvm(&self.c, &self.problem.c)
+            self._calculated = True
         _tasks = [t for t in self.problem.tasks if self.PL(t) == vm_id]
         tid_by_st = sorted(_tasks, key=self.ST)
         tid_by_ft = sorted(_tasks, key=self.FT)
@@ -107,7 +132,7 @@ cdef class Schedule:
         return True
 
     def plot_utilization(self, res, name, path="results"):
-        num_vms = len(self.vms)
+        num_vms = self.c.num_vms
         fig, axes = plt.subplots(num_vms, sharex=True, figsize=(20, 3 * num_vms))
 
         if num_vms == 1:

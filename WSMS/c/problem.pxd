@@ -1,4 +1,4 @@
-from WSMS.c.common cimport res_t, plim_t, Resources
+from WSMS.c.common cimport res_t, plim_t, Resources, res_le, vlen_t
 from libcpp cimport bool
 
 cdef extern from "problem.h":
@@ -41,12 +41,12 @@ cdef extern from "problem.h":
     bool problem_task_is_exit(problem_t* problem, int task_id)
 
     task_info_t* problem_task(problem_t* problem, int task_id)
-    res_t problem_task_demands(problem_t* problem, int task_id)
+    vlen_t* problem_task_demands(problem_t* problem, int task_id)
     int problem_task_runtime(problem_t* problem, int task_id, int type_id)
     int problem_task_average_runtime(problem_t* problem, int task_id)
 
     plim_t problem_type_demands(problem_t* problem, int type_id)
-    res_t problem_type_capacities(problem_t* Problem, int type_id)
+    vlen_t* problem_type_capacities(problem_t* Problem, int type_id)
     double problem_type_price(problem_t* problem, int type_id)
 
     double problem_charge(problem_t* problem, int type_id, int runtime)

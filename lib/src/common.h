@@ -43,9 +43,81 @@ typedef vlen_t res_t[RES_DIM];
 typedef vlen_t plim_t[LIM_DIM];
 
 bool res_richcmp(res_t r0, res_t r1, int op);
-#define res_scale(res0, res1) ((res0)[0] += (res1)[0], (res0)[1] += (res1)[1])
-#define res_iadd(x, y) ((x)[0] += (y)[0], (x)[1] += (y)[1])
-#define res_isub(x, y) ((x)[0] -= (y)[0], (x)[1] -= (y)[1])
+
+typedef vlen_t* volume_t;
+
+static inline bool vol_le(volume_t a, volume_t b, int dim) {
+    for (int i = 0; i < dim; ++i)
+        if (fgt(a[i], b[i])) return false;
+    return true;
+}
+
+static inline bool vol_le_precise(volume_t a, volume_t b, int dim) {
+    for (int i = 0; i < dim; ++i)
+        if (a[i] > b[i]) return false;
+    return true;
+}
+
+static inline bool vol_eq(volume_t a, volume_t b, int dim) {
+    for (int i = 0; i < dim; ++i)
+        if (!feq(a[i], b[i])) return false;
+    return true;
+}
+
+#define vol_ineg(a, dim) \
+    for (int i = 0; i < (dim); ++i) (a)[i] = -(a)[i]
+#define vol_iadd(a, b, dim) \
+    for (int i = 0; i < (dim); ++i) (a)[i] += (b)[i]
+#define vol_isub(a, b, dim) \
+    for (int i = 0; i < (dim); ++i) (a)[i] -= (b)[i]
+#define vol_sub(c, a, b, dim) \
+    for (int i = 0; i < dim; ++i) (c)[i] = (a)[i] - (b)[i]
+#define vol_iadd_v(a, v, dim) \
+    for (int i = 0; i < (dim); ++i) (a)[i] += (v)
+
+#if RES_DIM == 2
+
+#define res_le(a, b) (fle((a)[0], (b)[0]) && fle((a)[1], (b)[1]))
+#define res_le_precise(a, b) ((a)[0] < (b)[0] && (a)[1] < (b)[1])
+#define res_eq(a, b) (feq((a)[0], (b)[0]) && feq((a)[1], (b)[1]))
+#define res_ineg(a, b) \
+    (a)[0] = -(a)[0];  \
+    (a)[1] = -(a)[1]
+#define res_iadd(a, b) \
+    (a)[0] += (b)[0];  \
+    (a)[1] += (b)[1]
+#define res_isub(a, b) \
+    (a)[0] -= (b)[0];  \
+    (a)[1] -= (b)[1]
+#define res_sub(c, a, b)      \
+    (c)[0] = (a)[0] - (b)[0]; \
+    (c)[1] = (a)[1] - (b)[1]
+#define res_iadd_v(a, v) \
+    (a)[0] += v;         \
+    (a)[1] += v
+#define res_imax(a, b)    \
+    iMAX((a)[0], (b)[0]); \
+    iMAX((a)[1], (b)[1])
+
+#else
+
+#define res_le(a, b) volume_le(a, b, RES_DIM)
+#define res_le_precise(a, b) volume_le_precise(a, b, RES_DIM)
+#define res_eq(a, b) volume_eq(a, b, RES_DIM)
+#define res_ineg(a) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] = -(a)[i]
+#define res_iadd(a, b) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] += (b)[i]
+#define res_isub(a, b) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] -= (b)[i]
+#define res_sub(c, a, b) \
+    for (int i = 0; i < RES_DIM; ++i) (c)[i] = (a)[i] - (b)[i]
+#define res_iadd_v(a, v) \
+    for (int i = 0; i < RES_DIM; ++i) (a)[i] += v
+#define res_imax(a, b) \
+    for (int i = 0; i < RES_DIM; ++i) iMAX((a)[i], (b)[i])
+
+#endif
 
 #define _div_and_ceil(x, y) (((x) + (y)-1) / (y))
 

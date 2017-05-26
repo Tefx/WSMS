@@ -8,12 +8,14 @@
 typedef item_t task_t;
 #define task_item(task) (task)
 
-#define task_set(task, l, d)  \
-    task_item(task)->start_node = NULL;  \
-    task_item(task)->finish_node = NULL; \
-    task_item(task)->length = l;    \
-    task_item(task)->demands = d;
+inline void task_prepare(task_t* task, problem_t* problem, int task_id, int type_id) {
+    task_t* item = task_item(task);
+    item->start_node = item->finish_node = NULL;
+    item->length = problem_task_runtime(problem, task_id, type_id);
+    item->demands = problem_task_demands(problem, task_id);
+}
 
+#define task_set_start_time(task, st) task_item(task)->start_time = st
 #define task_start_time(task) (task_item(task)->start_time)
 #define task_finish_time(task) (task_start_time(task) + task_item(task)->length)
 
@@ -26,13 +28,17 @@ typedef struct machine_t {
 #define machine_item(machine) (&(machine)->item)
 void machine_init(machine_t *machine, int num_tasks);
 void machine_destory(machine_t *machine);
-void machine_set(machine_t *machine, plim_t demands);
+#define machine_set_demands(machine, dmnd) \
+    machine_item(machine)->demands = (dmnd)
+#define machine_set_runtime(machine, rt) machine_item(machine)->length = (rt)
+#define machine_print(machine) bin_print(machine_bin(machine))
 
 typedef bin_t platform_t;
 #define platform_bin(platform) (platform)
 #define platform_init(platform, total_limit) \
     bin_init(platform_bin(platform), LIM_DIM, MIN((total_limit), 4096))
 #define platform_destory(platform) bin_destory(platform_bin(platform))
+#define platform_print(platform) bin_print(platform_bin(platform))
 
 #define machine_open_time(machine) bin_open_time(machine_bin(machine))
 #define machine_close_time(machine) bin_close_time(machine_bin(machine))

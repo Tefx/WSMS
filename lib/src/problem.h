@@ -52,6 +52,15 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
 #define problem_task_runtime(problem, task_id, type_id) \
     ((problem)->rt_matrix[type_id][task_id])
 
+#define problem_task_num_prevs(problem, task_id) \
+    ((problem)->tasks[task_id].num_prevs)
+#define problem_task_num_nexts(problem, task_id) \
+    ((problem)->tasks[task_id].num_nexts)
+#define problem_task_prevs(problem, task_id) \
+    ((problem)->tasks[task_id].prevs)
+#define problem_task_nexts(problem, task_id) \
+    ((problem)->tasks[task_id].nexts)
+
 #define problem_type(problem, type_id) ((problem)->types + type_id)
 #define problem_type_demands(problem, type_id) \
     ((problem)->types[type_id].demands)

@@ -27,11 +27,8 @@ cdef class Resources:
     def __richcmp__(Resources self, Resources other, int op):
         return res_richcmp(self.c, other.c, op)
 
-    def scale(Resources self, Resources other):
-        res_scale(self.c, other.c)
-
     def __repr__(self):
-        return "({:.2%}, {})".format(self.c.core, int(self.c.memory))
+        return str(self.c)
 
     def __getitem__(self, res):
         if res == "core":
