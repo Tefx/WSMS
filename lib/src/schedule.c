@@ -22,6 +22,13 @@ static inline int _compare_int(const void* a, const void* b) {
     return (*da > *db) - (*da < *db);
 }
 
+static inline int _compare_st(const void* a, const void* b, void* schedule) {
+    const int st_a = ST((schedule_t*)schedule, *(int*)a);
+    const int st_b = ST((schedule_t*)schedule, *(int*)b);
+
+    return (st_a > st_b) - (st_a < st_b);
+}
+
 static inline void _fill_finish_times(schedule_t* schedule,
                                       problem_t* problem) {
     int num_tasks = schedule->num_tasks;
@@ -39,7 +46,7 @@ static inline void _fill_vm_times(schedule_t* schedule) {
     int* placements = schedule->placements;
 
     schedule->_finish_times = schedule->start_times + num_tasks;
-    schedule->_vm_open_times = (int*)malloc(sizeof(int) * num_vms * 2);
+    schedule->_vm_open_times = schedule->vm_types + num_vms;
     schedule->_vm_close_times = schedule->_vm_open_times + num_vms;
     int* finish_times = schedule->_finish_times;
     int* open_times = schedule->_vm_open_times;
@@ -57,30 +64,28 @@ static inline void _fill_vm_times(schedule_t* schedule) {
     }
 }
 
-void schedule_init(schedule_t* schedule, int num_tasks) {
+void schedule_init(schedule_t* schedule, int num_tasks, int num_vms) {
+    int alloc_size = sizeof(int) * (num_tasks  + num_vms) * 3;
     schedule->num_tasks = num_tasks;
-    schedule->placements = (int*)malloc(sizeof(int) * num_tasks * 3);
+    schedule->num_vms = num_vms;
+    schedule->placements = (int*)malloc(alloc_size);
     schedule->start_times = schedule->placements + num_tasks;
-    schedule->vm_types = NULL;
     schedule->_finish_times = NULL;
+    schedule->vm_types = schedule->placements + 3 * num_tasks;
     schedule->_vm_open_times = schedule->_vm_close_times = NULL;
     schedule->pnvm = 0;
 }
 
-void schedule_free(schedule_t* schedule) {
+void schedule_destory(schedule_t* schedule) {
     free(schedule->placements);
-    if (schedule->vm_types) free(schedule->vm_types);
-    if (schedule->_vm_open_times) free(schedule->_vm_open_times);
 }
 
 void schedule_set_placements(schedule_t* schedule, int* placements) {
     memcpy(schedule->placements, placements, sizeof(int) * schedule->num_tasks);
 }
 
-void schedule_set_vm_types(schedule_t* schedule, int* vm_types, int num_vms) {
-    schedule->num_vms = num_vms;
-    schedule->vm_types = (int*)malloc(sizeof(int) * num_vms);
-    memcpy(schedule->vm_types, vm_types, sizeof(int) * num_vms);
+void schedule_set_vm_types(schedule_t* schedule, int* vm_types) {
+    memcpy(schedule->vm_types, vm_types, sizeof(int) * schedule->num_vms);
 }
 
 void schedule_set_start_times(schedule_t* schedule, int* start_times) {
@@ -88,13 +93,18 @@ void schedule_set_start_times(schedule_t* schedule, int* start_times) {
            sizeof(int) * schedule->num_tasks);
 }
 
+void schedule_get_order(schedule_t* schedule, int* order) {
+    for (int i = 0; i < schedule->num_tasks; ++i) order[i] = i;
+    qsort_r(order, schedule->num_tasks, sizeof(int), _compare_st, schedule);
+}
+
 void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
-                       bool forward, mempool_t* mpool) {
+                       bool forward) {
     int num_tasks = schedule->num_tasks;
     int num_vms = schedule->num_vms;
 
     schedule->_finish_times = schedule->start_times + num_tasks;
-    schedule->_vm_open_times = (int*)malloc(sizeof(int) * num_vms * 2);
+    schedule->_vm_open_times = schedule->vm_types + num_vms;
     schedule->_vm_close_times = schedule->_vm_open_times + num_vms;
 
     int* placements = schedule->placements;
@@ -103,9 +113,8 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
     int* finish_times = schedule->_finish_times;
     task_info_t* tasks = problem->tasks;
     type_info_t* types = problem->types;
-    bool new_mpool = mpool == NULL;
-    if (new_mpool) mpool = machine_create_mpool(num_tasks);
 
+    mempool_t* pool = bin_prepare_pool(RES_DIM, num_tasks);
     machine_t* _vms = (machine_t*)malloc(sizeof(machine_t) * num_vms);
     task_t task;
     machine_t* vm;
@@ -115,7 +124,7 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
 
     for (int i = 0; i < num_vms; ++i) {
         vm = _vms + i;
-        machine_init(vm, mpool);
+        machine_init_external_pool(vm, pool);
         machine_set_demands(vm, types[vm_types[i]].demands);
     }
 
@@ -136,12 +145,12 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
     }
 
     for (int i = 0; i < num_vms; ++i) {
-        schedule->_vm_open_times[i] = machine_open_time(_vms + i);
-        schedule->_vm_close_times[i] = machine_close_time(_vms + i);
-        machine_destory(_vms + i);
+        vm = _vms + i;
+        schedule->_vm_open_times[i] = machine_open_time(vm);
+        schedule->_vm_close_times[i] = machine_close_time(vm);
     }
     free(_vms);
-    if (new_mpool) mp_free_pool(mpool);
+    mp_free_pool(pool);
 }
 
 void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem) {
@@ -155,8 +164,9 @@ void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem) {
     int span_start = INT_MAX;
     int span_finish = -INT_MAX;
     int open_time, close_time;
+    int num_vms = schedule->num_vms;
 
-    for (int vm_id = 0; vm_id < schedule->num_vms; ++vm_id) {
+    for (int vm_id = 0; vm_id < num_vms; ++vm_id) {
         open_time = open_times[vm_id];
         close_time = close_times[vm_id];
         cost +=

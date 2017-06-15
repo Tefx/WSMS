@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -ffast-math -funroll-loops")
 set(CMAKE_SOURCE_DIR src)
 
-set(SOURCE_FILES_COMMON common.h common.c mpool.h linkedlist.h)
+set(SOURCE_FILES_COMMON common.h common.c mpool.h mpool.c linkedlist.h)
 set(SOURCE_FILES_BIN bin.c bin.h)
 set(SOURCE_FILES_PROBLEM problem.c problem.h ${SOURCE_FILES_COMMON})
 set(SOURCE_FILES_PLATFORM platform.c platform.h ${SOURCE_FILES_BIN} ${SOURCE_FILES_COMMON})
@@ -16,5 +16,3 @@ set(SOURCE_FILES_EXTRA extra.h extra.c ${SOURCE_FILES_COMMON})
 add_library(wsms SHARED ${SOURCE_FILES_PROBLEM} ${SOURCE_FILES_PLATFORM} ${SOURCE_FILES_SCHEDULE})
 
 add_library(wsms_extra SHARED ${SOURCE_FILES_EXTRA} ${SOURCE_FILES_PROBLEM})
-
-#add_executable(wmsm_test main.c ${SOURCE_FILES_PROBLEM} ${SOURCE_FILES_TOOLS})

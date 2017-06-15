@@ -25,14 +25,15 @@ typedef struct schedule_t {
     int* _vm_close_times;
 } schedule_t;
 
-void schedule_init(schedule_t* schedule, int num_tasks);
-void schedule_free(schedule_t* schedule);
+void schedule_init(schedule_t* schedule, int num_tasks, int num_vms);
+void schedule_destory(schedule_t* schedule);
 void schedule_set_placements(schedule_t* schedule, int* placements);
-void schedule_set_vm_types(schedule_t* schedule, int* vm_types, int num_vms);
+void schedule_set_vm_types(schedule_t* schedule, int* vm_types);
 void schedule_set_start_times(schedule_t* schedule, int* start_times);
+void schedule_get_order(schedule_t* schedule, int* order);
 
 void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
-                       bool forward, mempool_t* mpool);
+                       bool forward);
 
 void schedule_calculate_objectives(schedule_t* schedule, problem_t* problem);
 int schedule_calculate_pnvm(schedule_t* schedule, problem_t* problem);

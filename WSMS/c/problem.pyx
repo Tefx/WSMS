@@ -37,7 +37,7 @@ cdef class Problem:
                 problem_set_runtime(&self.c, i, j, rt)
 
     def __dealloc__(self):
-        problem_free(&self.c)
+        problem_destory(&self.c)
 
     def task_demands(self, int task_id):
         res = Resources()

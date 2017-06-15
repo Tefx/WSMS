@@ -5,6 +5,8 @@
 #include <string.h>
 #include <x86intrin.h>
 
+static vlen_t vol_tmp[DIM_MAX];
+
 #define _next(node) list_entry((node)->list.next, bin_node_t, list)
 #define _prev(node) list_entry((node)->list.prev, bin_node_t, list)
 
@@ -50,7 +52,6 @@ static inline bin_node_t* _clone_node(bin_t* bin, bin_node_t* prev_node,
 
 void bin_init(bin_t* bin, int dim, mempool_t* pool) {
     bin->volume_dim = dim;
-    /*mp_init(&bin->pool, bnode_real_size(dim), node_buffer_size);*/
     bin->pool = pool;
     bin->head = _alloc_node(bin);
     bin->head->time = -INT_MAX;
@@ -60,20 +61,19 @@ void bin_init(bin_t* bin, int dim, mempool_t* pool) {
     tail->time = INT_MAX;
     _set_volume(tail, 0, dim);
     list_insert_after(&bin->head->list, &tail->list);
-    bin->vol_tmp = (vlen_t*)malloc(sizeof(vlen_t) * dim);
     bin->last_start_node = bin->head;
 }
 
-void bin_destory(bin_t* bin) {
-    mempool_t* pool = bin->pool;
-    bin_node_t* head = bin->head;
-    bin_node_t* node = head;
-    bin_node_t* tmp;
-    do {
+void bin_empty(bin_t* bin) {
+    bin_node_t* node = bin->head;
+    bin_node_t* tmp = node;
+    node = _next(node);
+    mp_free(bin->pool, tmp);
+    while (node != bin->head) {
         tmp = node;
         node = _next(node);
-        mp_free(pool, tmp);
-    } while (node != head);
+        mp_free(bin->pool, tmp);
+    }
 }
 
 int bin_open_time(bin_t* bin) {
@@ -92,7 +92,9 @@ int bin_span(bin_t* bin) {
 
 static inline bin_node_t* _search_node(bin_t* bin, int time) {
     bin_node_t* node = _prev(bin->head);
-    while (node->time > time) node = _prev(node);
+    while (node->time > time) {
+        node = _prev(node);
+    }
     return node;
 }
 
@@ -133,16 +135,16 @@ static inline bin_node_t* _earliest_slot_small(bin_node_t* node, int est,
 
 int bin_earliest_position(bin_t* bin, item_t* item, int est, volume_t cap) {
     int dim = bin->volume_dim;
-    vol_sub(bin->vol_tmp, cap, item->demands, dim);
+    vol_sub(vol_tmp, cap, item->demands, dim);
     item->start_node = _earliest_slot(_search_node(bin, est), est, item->length,
-                                      bin->vol_tmp, dim);
+                                      vol_tmp, dim);
     return MAX(est, item->start_node->time);
 }
 
 int bin_earliest_position_res(bin_t* bin, item_t* item, int est, volume_t cap) {
-    res_sub(bin->vol_tmp, cap, item->demands);
+    res_sub(vol_tmp, cap, item->demands);
     item->start_node = _earliest_slot_small(_search_node(bin, est), est,
-                                            item->length, bin->vol_tmp);
+                                            item->length, vol_tmp);
     return MAX(est, item->start_node->time);
 }
 
@@ -156,10 +158,9 @@ int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
         while (node->time < est);
         if (node->time > est) node = _prev(node);
     }
-    volume_t vol = bin->vol_tmp;
-    vol_sub(vol, cap, item->demands, dim);
-    vol_iadd_v(vol, EPSILON, dim);
-    while (!vol_le_precise(bnode_usage(node), vol, dim)) node = _next(node);
+    vol_sub(vol_tmp, cap, item->demands, dim);
+    vol_iadd_v(vol_tmp, EPSILON, dim);
+    while (!vol_le_precise(bnode_usage(node), vol_tmp, dim)) node = _next(node);
     item->start_node = node;
     return item->start_time = MAX(est, node->time);
 }
@@ -173,10 +174,9 @@ int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
         while (node->time < est);
         if (node->time > est) node = _prev(node);
     }
-    volume_t vol = bin->vol_tmp;
-    res_sub(vol, cap, item->demands);
-    res_iadd_v(vol, EPSILON);
-    while (!res_le_precise(bnode_usage(node), vol)) node = _next(node);
+    res_sub(vol_tmp, cap, item->demands);
+    res_iadd_v(vol_tmp, EPSILON);
+    while (!res_le_precise(bnode_usage(node), vol_tmp)) node = _next(node);
     item->start_node = node;
     return item->start_time = MAX(est, node->time);
 }
@@ -265,24 +265,24 @@ void bin_extend_item(bin_t* bin, item_t* item, int st, int ft) {
         item->finish_node =
             _bin_alloc(bin, ft_0, ft, item->demands, item->finish_node);
     }
-    item->length = ft - st;
+    item->length = MAX(ft, ft_0) - MIN(st, st_0);
 }
 
 int bin_extendable_interval_start(bin_t* bin, item_t* item, volume_t cap) {
     int dim = bin->volume_dim;
-    vol_sub(bin->vol_tmp, cap, item->demands, dim);
+    vol_sub(vol_tmp, cap, item->demands, dim);
     bin_node_t* node = item->start_node;
     if (node->time == item->start_time) node = _prev(node);
-    while (vol_le(bnode_usage(node), bin->vol_tmp, dim)) node = _prev(node);
+    while (vol_le(bnode_usage(node), vol_tmp, dim)) node = _prev(node);
     node = _next(node);
     return MIN(node->time, item->start_time);
 }
 
 int bin_extendable_interval_finish(bin_t* bin, item_t* item, volume_t cap) {
     int dim = bin->volume_dim;
-    vol_sub(bin->vol_tmp, cap, item->demands, dim);
+    vol_sub(vol_tmp, cap, item->demands, dim);
     bin_node_t* node = item->finish_node;
-    while (vol_le(bnode_usage(node), bin->vol_tmp, dim)) node = _next(node);
+    while (vol_le(bnode_usage(node), vol_tmp, dim)) node = _next(node);
     return MAX(node->time, item->start_time + item->length);
 }
 

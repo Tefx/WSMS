@@ -10,6 +10,7 @@
 
 #define RES_DIM 2
 #define LIM_DIM 1
+#define DIM_MAX 2
 
 typedef int vlen_t;
 #define VLEN_IS_INT

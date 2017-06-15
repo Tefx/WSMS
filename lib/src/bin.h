@@ -12,7 +12,8 @@ typedef struct bin_node_t {
 
 #define bnode_real_size(dim) (sizeof(bin_node_t) + sizeof(vlen_t) * (dim))
 #define bnode_usage(x) ((volume_t)((x) + 1))
-#define bnode_create_mpool(dim, size) mp_create_pool(bnode_real_size(dim), size)
+/*#define bnode_create_mpool(dim, size) mp_create_pool(bnode_real_size(dim),
+ * size)*/
 
 typedef struct item_t {
     bin_node_t* start_node;
@@ -26,15 +27,18 @@ typedef struct bin_t {
     bin_node_t* head;
     mempool_t* pool;
     int volume_dim;
-    vlen_t* vol_tmp;
     bin_node_t* last_start_node;
 } bin_t;
 
 void bin_print(bin_t* bin);
 #define bin_is_empty(bin) ((bin)->head->list.next->next == &(bin)->head->list)
 
-void bin_init(bin_t* bin, int dim, mempool_t* mpool);
-void bin_destory(bin_t* bin);
+inline mempool_t* bin_prepare_pool(int dim, size_t buffer_size) {
+    return mp_create_pool(bnode_real_size(dim), buffer_size);
+}
+
+void bin_init(bin_t* bin, int dim, mempool_t* pool);
+void bin_empty(bin_t* bin);
 void bin_shift(bin_t* bin, int delta);
 
 int bin_open_time(bin_t* bin);

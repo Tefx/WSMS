@@ -19,7 +19,7 @@ void problem_init(problem_t* problem, int num_tasks, int num_types,
             (int*)(problem->rt_matrix) + (i + 1) * num_tasks;
 }
 
-void problem_free(problem_t* problem) {
+void problem_destory(problem_t* problem) {
     for (int i = 0; i < problem->num_tasks; ++i) {
         free(problem->tasks[i].prevs);
         free(problem->tasks[i].nexts);

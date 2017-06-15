@@ -4,3 +4,5 @@
 *.data
 /results/
 *.data.old
+/test.c
+*.html

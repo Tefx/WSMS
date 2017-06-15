@@ -7,22 +7,16 @@ import os.path
 
 
 cdef class Schedule:
-    cdef schedule_t c
-    cdef Problem problem
-    cdef bool _calculated
-    cdef mempool_t* _mpool
-
-    def __cinit__(self, Problem problem):
+    def __cinit__(self, Problem problem, int num_vms):
         self.problem = problem
-        schedule_init(&self.c, problem.num_tasks)
+        schedule_init(&self.c, problem.num_tasks, num_vms)
         self._calculated = False
-        self._mpool = NULL
 
     def __dealloc__(self):
-        schedule_free(&self.c)
+        schedule_destory(&self.c)
 
-    @classmethod
-    def from_platform(cls, Problem problem, Platform platform):
+    @staticmethod
+    def from_platform(Problem problem, Platform platform):
         placements = array.array("i", [0] * problem.num_tasks)
         start_times = array.array("i", [0] * problem.num_tasks)
         vm_types = array.array("i")
@@ -31,7 +25,7 @@ cdef class Schedule:
             for task in machine.tasks:
                 placements[task.task_id] = m_id
                 start_times[task.task_id] = task.start_time
-        schedule = cls(problem)
+        schedule = Schedule.__new__(Schedule, problem, len(vm_types))
         schedule.placements = placements
         schedule.vm_types = vm_types
         schedule.start_times = start_times
@@ -44,19 +38,16 @@ cdef class Schedule:
         schedule_set_placements(&self.c, placements.data.as_ints)
 
     def set_vm_types(self, array.array vm_types):
-        schedule_set_vm_types(&self.c, vm_types.data.as_ints, len(vm_types))
+        schedule_set_vm_types(&self.c, vm_types.data.as_ints)
 
     def set_start_times(self, array.array start_times):
         schedule_set_start_times(&self.c, start_times.data.as_ints)
 
-    def set_mempool(self, MemPool mpool):
-        self._mpool = mpool.c_ptr
-
     def set_scheduling_order(self, array.array order):
-        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, False, self._mpool)
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, False)
 
     def set_start_order(self, array.array order):
-        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, True, self._mpool)
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, True)
 
     def PL(self, int task_id):
         return PL(&self.c, task_id)
@@ -136,8 +127,8 @@ cdef class Schedule:
                     return False
         return True
 
-    def plot_utilization(self, res, name, path="results"):
-        num_vms = self.c.num_vms
+    def plot_utilization(self, str res, str name, str path="results"):
+        cdef int num_vms = self.c.num_vms
         fig, axes = plt.subplots(num_vms, sharex=True, figsize=(20, 3 * num_vms))
 
         if num_vms == 1:

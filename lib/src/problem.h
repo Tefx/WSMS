@@ -30,7 +30,7 @@ typedef struct problem_t {
 
 void problem_init(problem_t* problem, int num_tasks, int num_types,
                   int total_limit, int charge_unit);
-void problem_free(problem_t* problem);
+void problem_destory(problem_t* problem);
 
 void problem_add_task(problem_t* problem, int task_id, res_t res_demands,
                       int* prev_ids, int num_prevs, int* next_ids,

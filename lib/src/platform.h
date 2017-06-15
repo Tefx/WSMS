@@ -25,11 +25,13 @@ typedef struct machine_t {
     item_t item;
 } machine_t;
 
-#define machine_create_mpool(buffer_size) bnode_create_mpool(RES_DIM, buffer_size)
+/*#define machine_create_mpool(buffer_size) bnode_create_mpool(RES_DIM,
+ * buffer_size)*/
 
 #define machine_bin(machine) (&(machine)->bin)
 #define machine_item(machine) (&(machine)->item)
-void machine_init(machine_t *machine, mempool_t *mpool);
+void machine_init_external_pool(machine_t* machine, mempool_t* pool);
+void machine_init(machine_t *machine, int num_tasks);
 void machine_destory(machine_t *machine);
 #define machine_set_demands(machine, dmnd) \
     machine_item(machine)->demands = (dmnd)
@@ -37,12 +39,9 @@ void machine_destory(machine_t *machine);
 #define machine_print(machine) bin_print(machine_bin(machine))
 
 typedef bin_t platform_t;
-#define platform_create_mpool(buffer_size) bnode_create_mpool(LIM_DIM, buffer_size)
-
 #define platform_bin(platform) (platform)
-#define platform_init(platform, mpool) \
-    bin_init(platform_bin(platform), LIM_DIM, mpool)
-#define platform_destory(platform) bin_destory(platform_bin(platform))
+void platform_init(platform_t *platform, int limit);
+void platform_destory(platform_t *platform);
 #define platform_print(platform) bin_print(platform_bin(platform))
 
 #define machine_open_time(machine) bin_open_time(machine_bin(machine))

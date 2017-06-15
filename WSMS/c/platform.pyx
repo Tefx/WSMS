@@ -27,26 +27,13 @@ cdef class Task:
 
 
 cdef class Machine:
-    def __cinit__(self, Problem problem, MemPool mpool=None):
-        if mpool:
-            self._mpool = mpool.c_ptr
-            self._own_mpool = False
-        else:
-            self._mpool = machine_create_mpool(problem.num_tasks)
-            self._own_mpool = True
-        machine_init(&self.c, self._mpool)
+    def __cinit__(self, Problem problem):
+        machine_init(&self.c, problem.num_tasks)
         self._problem = &problem.c
         self._tasks = set()
 
     def __dealloc__(self):
         machine_destory(&self.c)
-        if self._own_mpool: mp_free_pool(self._mpool)
-
-    @classmethod
-    def create_mpool(self, int buffer_size):
-        cdef MemPool pool = MemPool()
-        pool.c_ptr = machine_create_mpool(buffer_size)
-        return pool
 
     def prepare(self, Task task, int type_id):
         cdef rt = problem_task_runtime(self._problem, task._task_id, self._type_id)
@@ -111,14 +98,12 @@ cdef class Machine:
 
 cdef class Platform:
     def __cinit__(self, Problem problem):
-        self._mpool = platform_create_mpool(problem.num_tasks)
-        platform_init(&self.c, self._mpool)
         self._limits = &problem.c.limits[0]
         self._machines = set()
+        platform_init(&self.c, min(problem.c.limits[0], problem.c.num_tasks))
 
     def __dealloc__(self):
         platform_destory(&self.c)
-        mp_free_pool(self._mpool)
 
     def earliest_position(self, Machine machine, int est):
         return platform_earliest_position(&self.c, &machine.c, est, self._limits)
