@@ -30,10 +30,10 @@ cdef extern from "problem.h":
     void problem_destory(problem_t* problem)
 
     void problem_add_task(problem_t* problem, int task_id,
-                          res_t res_demands,
+                          vlen_t* res_demands,
                           int* prev_ids, int num_prevs,
                           int* next_ids, int num_nexts)
-    void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
+    void problem_add_type(problem_t* problem, int vt_id, vlen_t* capacities,
                           double price, int limit)
     void problem_set_runtime(problem_t* problem,
                         int task_id, int type_id, int runtime)
@@ -47,7 +47,7 @@ cdef extern from "problem.h":
     int problem_task_runtime(problem_t* problem, int task_id, int type_id)
     int problem_task_average_runtime(problem_t* problem, int task_id)
 
-    plim_t problem_type_demands(problem_t* problem, int type_id)
+    vlen_t* problem_type_demands(problem_t* problem, int type_id)
     vlen_t* problem_type_capacities(problem_t* Problem, int type_id)
     double problem_type_price(problem_t* problem, int type_id)
     int problem_cheapest_type_for_demands(problem_t* problem, vlen_t* demands)

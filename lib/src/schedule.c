@@ -117,7 +117,7 @@ void schedule_simulate(schedule_t* schedule, problem_t* problem, int* order,
     task_t task;
     machine_t* vm;
     int task_id, vm_id, type_id;
-    volume_t capacities;
+    vlen_t* capacities;
     int est;
 
     for (int i = 0; i < num_vms; ++i) {

@@ -99,7 +99,7 @@ static inline bin_node_t* _search_node(bin_t* bin, int time) {
 }
 
 static inline bin_node_t* _earliest_slot(bin_node_t* node, int est, int length,
-                                         volume_t vol, int dim) {
+                                         vlen_t* vol, int dim) {
     register int ft = est + length;
     bin_node_t* start_node = node;
     vol_iadd_v(vol, EPSILON, dim);
@@ -117,7 +117,7 @@ static inline bin_node_t* _earliest_slot(bin_node_t* node, int est, int length,
 }
 
 static inline bin_node_t* _earliest_slot_small(bin_node_t* node, int est,
-                                               int length, volume_t vol) {
+                                               int length, vlen_t* vol) {
     register int ft = est + length;
     bin_node_t* start_node = node;
     res_iadd_v(vol, EPSILON);
@@ -133,7 +133,7 @@ static inline bin_node_t* _earliest_slot_small(bin_node_t* node, int est,
     return start_node;
 }
 
-int bin_earliest_position(bin_t* bin, item_t* item, int est, volume_t cap) {
+int bin_earliest_position(bin_t* bin, item_t* item, int est, vlen_t* cap) {
     int dim = bin->volume_dim;
     vol_sub(vol_tmp, cap, item->demands, dim);
     item->start_node = _earliest_slot(_search_node(bin, est), est, item->length,
@@ -141,7 +141,7 @@ int bin_earliest_position(bin_t* bin, item_t* item, int est, volume_t cap) {
     return MAX(est, item->start_node->time);
 }
 
-int bin_earliest_position_res(bin_t* bin, item_t* item, int est, volume_t cap) {
+int bin_earliest_position_res(bin_t* bin, item_t* item, int est, vlen_t* cap) {
     res_sub(vol_tmp, cap, item->demands);
     item->start_node = _earliest_slot_small(_search_node(bin, est), est,
                                             item->length, vol_tmp);
@@ -149,7 +149,7 @@ int bin_earliest_position_res(bin_t* bin, item_t* item, int est, volume_t cap) {
 }
 
 int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
-                                  volume_t cap) {
+                                  vlen_t* cap) {
     int dim = bin->volume_dim;
     bin_node_t* node = bin->last_start_node;
     if (node->time < est) {
@@ -166,7 +166,7 @@ int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
 }
 
 int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
-                                      volume_t cap) {
+                                      vlen_t* cap) {
     bin_node_t* node = bin->last_start_node;
     if (node->time < est) {
         do
@@ -182,11 +182,11 @@ int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
 }
 
 static inline bin_node_t* _bin_alloc(bin_t* bin, int st, int ft,
-                                     volume_t demands, bin_node_t* node) {
+                                     vlen_t* demands, bin_node_t* node) {
     int dim = bin->volume_dim;
     if (!node) node = _search_node(bin, st);
     if (node->time != st) node = _clone_node(bin, node, st);
-    volume_t usage = bnode_usage(node);
+    vlen_t* usage = bnode_usage(node);
     vol_iadd(usage, demands, dim);
     if (vol_eq(bnode_usage(_prev(node)), usage, dim)) {
         _delete_node(bin, node);
@@ -210,10 +210,10 @@ static inline bin_node_t* _bin_alloc(bin_t* bin, int st, int ft,
 }
 
 static inline bin_node_t* _bin_alloc_small(bin_t* bin, int st, int ft,
-                                           volume_t demands, bin_node_t* node) {
+                                           vlen_t* demands, bin_node_t* node) {
     if (!node) node = _search_node(bin, st);
     if (node->time != st) node = _clone_node(bin, node, st);
-    volume_t usage = bnode_usage(node);
+    vlen_t* usage = bnode_usage(node);
     res_iadd(usage, demands);
     if (res_eq(bnode_usage(_prev(node)), usage)) {
         _delete_node(bin, node);
@@ -268,7 +268,7 @@ void bin_extend_item(bin_t* bin, item_t* item, int st, int ft) {
     item->length = MAX(ft, ft_0) - MIN(st, st_0);
 }
 
-int bin_extendable_interval_start(bin_t* bin, item_t* item, volume_t cap) {
+int bin_extendable_interval_start(bin_t* bin, item_t* item, vlen_t* cap) {
     int dim = bin->volume_dim;
     vol_sub(vol_tmp, cap, item->demands, dim);
     bin_node_t* node = item->start_node;
@@ -278,7 +278,7 @@ int bin_extendable_interval_start(bin_t* bin, item_t* item, volume_t cap) {
     return MIN(node->time, item->start_time);
 }
 
-int bin_extendable_interval_finish(bin_t* bin, item_t* item, volume_t cap) {
+int bin_extendable_interval_finish(bin_t* bin, item_t* item, vlen_t* cap) {
     int dim = bin->volume_dim;
     vol_sub(vol_tmp, cap, item->demands, dim);
     bin_node_t* node = item->finish_node;

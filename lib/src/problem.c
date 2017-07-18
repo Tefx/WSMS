@@ -33,7 +33,7 @@ void problem_destory(problem_t* problem) {
     free(problem->adj_matrix);
 }
 
-void problem_add_task(problem_t* problem, int task_id, res_t demands,
+void problem_add_task(problem_t* problem, int task_id, vlen_t* demands,
                       int* prev_ids, int num_prevs, int* next_ids,
                       int num_nexts) {
     task_info_t* task = problem->tasks + task_id;
@@ -52,7 +52,7 @@ void problem_add_task(problem_t* problem, int task_id, res_t demands,
     }
 }
 
-void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
+void problem_add_type(problem_t* problem, int vt_id, vlen_t* capacities,
                       double price, int limit) {
     type_info_t* type = problem->types + vt_id;
     memcpy(type->capacities, capacities, sizeof(vlen_t) * RES_DIM);

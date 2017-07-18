@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void machine_init_external_pool(machine_t* machine, mempool_t* pool){
+void machine_init_external_pool(machine_t *machine, mempool_t *pool) {
     bin_init(machine_bin(machine), RES_DIM, pool);
     machine_item(machine)->start_node = NULL;
     machine_item(machine)->finish_node = NULL;
@@ -20,13 +20,13 @@ void machine_destory(machine_t *machine) {
 }
 
 int machine_earliest_position(machine_t *machine, task_t *task, int est,
-                              res_t capacities) {
+                              vlen_t *capacities) {
     return bin_earliest_position_res(machine_bin(machine), task_item(task), est,
                                      capacities);
 }
 
 int machine_earliest_position_forward(machine_t *machine, task_t *task, int est,
-                                      res_t capacities) {
+                                      vlen_t *capacities) {
     return bin_earliest_position_forward_res(machine_bin(machine),
                                              task_item(task), est, capacities);
 }
@@ -40,19 +40,19 @@ void machine_shift_task(machine_t *machine, task_t *task, int delta) {
 }
 
 int machine_extendable_interval_start(machine_t *machine, task_t *task,
-                                      res_t capacities) {
+                                      vlen_t *capacities) {
     return bin_extendable_interval_start(machine_bin(machine), task_item(task),
                                          capacities);
 }
 
 int machine_extendable_interval_finish(machine_t *machine, task_t *task,
-                                       res_t capacities) {
+                                       vlen_t *capacities) {
     return bin_extendable_interval_finish(machine_bin(machine), task_item(task),
                                           capacities);
 }
 
 int platform_earliest_position(platform_t *platform, machine_t *machine,
-                               int est, plim_t plim) {
+                               int est, vlen_t *plim) {
     return bin_earliest_position(platform_bin(platform), machine_item(machine),
                                  est, plim);
 }
@@ -82,13 +82,13 @@ void platform_extend_machine(platform_t *platform, machine_t *machine) {
 }
 
 int platform_extendable_interval_start(platform_t *platform, machine_t *machine,
-                                       plim_t plim) {
+                                       vlen_t *plim) {
     return bin_extendable_interval_start(platform_bin(platform),
                                          machine_item(machine), plim);
 }
 
 int platform_extendable_interval_finish(platform_t *platform,
-                                        machine_t *machine, plim_t plim) {
+                                        machine_t *machine, vlen_t *plim) {
     return bin_extendable_interval_finish(platform_bin(platform),
                                           machine_item(machine), plim);
 }

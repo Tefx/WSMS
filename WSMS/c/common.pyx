@@ -13,7 +13,7 @@ cdef class Resources:
         self.c[0] = core
         self.c[1] = memory
 
-    cdef _setc(self, res_t c):
+    cdef _setc(self, vlen_t* c):
         memcpy(self.c, c, sizeof(vlen_t) * RES_DIM)
 
     def __iadd__(Resources self, Resources other):

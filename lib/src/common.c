@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-bool res_richcmp(res_t r0, res_t r1, int op) {
+bool res_richcmp(vlen_t* r0, vlen_t* r1, int op) {
     bool res;
     switch (op) {
         case 0:

@@ -1,16 +1,14 @@
-from WSMS.c.common cimport vlen_t, Resources
+from WSMS.c.common cimport vlen_t, Resources, res_t
 from WSMS.c.problem cimport *
 from WSMS.c.mpool cimport MemPool, mempool_t, mp_free_pool
 
 
 cdef extern from "platform.h":
-    ctypedef vlen_t* volume_t
-
     struct bin_node_t
     struct item_t:
         bin_node_t* start_node
         bin_node_t* finish_node
-        volume_t demands
+        vlen_t* demands
         int start_time
         int length
 
@@ -30,6 +28,8 @@ cdef extern from "platform.h":
     struct machine_t:
         bin_t bin
         item_t item
+        # res_t peak_usage
+
     void machine_init(machine_t *machine, int num_tasks)
     void machine_destory(machine_t *machine)
     void machine_set_demands(machine_t* machine, vlen_t* demands)

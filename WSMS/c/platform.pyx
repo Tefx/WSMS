@@ -43,7 +43,7 @@ cdef class Machine:
 
     def earliest_position(self, Task task, int est, int type_id=-1):
         if type_id < 0: type_id = self._type_id
-        cdef volume_t capacities = problem_type_capacities(self._problem, type_id)
+        cdef vlen_t* capacities = problem_type_capacities(self._problem, type_id)
         task_prepare(&task.c, self._problem, task._task_id, type_id)
         return machine_earliest_position(&self.c, &task.c, est, capacities)
 

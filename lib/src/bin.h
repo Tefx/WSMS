@@ -11,14 +11,14 @@ typedef struct bin_node_t {
 } bin_node_t;
 
 #define bnode_real_size(dim) (sizeof(bin_node_t) + sizeof(vlen_t) * (dim))
-#define bnode_usage(x) ((volume_t)((x) + 1))
+#define bnode_usage(x) ((vlen_t*)((x) + 1))
 /*#define bnode_create_mpool(dim, size) mp_create_pool(bnode_real_size(dim),
  * size)*/
 
 typedef struct item_t {
     bin_node_t* start_node;
     bin_node_t* finish_node;
-    volume_t demands;
+    vlen_t* demands;
     int start_time;
     int length;
 } item_t;
@@ -46,19 +46,19 @@ int bin_close_time(bin_t* bin);
 int bin_span(bin_t* bin);
 
 int bin_earliest_position(bin_t* bin, item_t* item, int est,
-                          volume_t capacities);
+                          vlen_t* capacities);
 int bin_earliest_position_res(bin_t* bin, item_t* item, int est,
-                              volume_t capacities);
+                              vlen_t* capacities);
 int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
-                                  volume_t cap);
+                                  vlen_t* cap);
 int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
-                                      volume_t cap);
+                                      vlen_t* cap);
 int bin_place_item(bin_t* bin, item_t* item);
 int bin_place_item_res(bin_t* bin, item_t* item);
 void bin_extend_item(bin_t* bin, item_t* item, int st, int ft);
 void bin_shift_item(bin_t* bin, item_t* item, int delta);
-int bin_extendable_interval_start(bin_t*, item_t* item, volume_t capacities);
+int bin_extendable_interval_start(bin_t*, item_t* item, vlen_t* capacities);
 int bin_extendable_interval_finish(bin_t* bin, item_t* item,
-                                   volume_t capacities);
+                                   vlen_t* capacities);
 
 #endif  // ifndef WSMS_BIN_H

@@ -5,7 +5,7 @@
 #include "common.h"
 
 typedef struct task_info_t {
-    res_t demands;
+    vlen_t demands[RES_DIM];
     int num_prevs;
     int num_nexts;
     int* prevs;
@@ -13,10 +13,10 @@ typedef struct task_info_t {
 } task_info_t;
 
 typedef struct type_info_t {
-    res_t capacities;
+    vlen_t capacities[RES_DIM];
     double price;
     int limit;
-    plim_t demands;
+    vlen_t demands[LIM_DIM];
 } type_info_t;
 
 typedef struct problem_t {
@@ -24,7 +24,7 @@ typedef struct problem_t {
     type_info_t* types;
     int num_tasks;
     int num_types;
-    plim_t limits;
+    vlen_t limits[LIM_DIM];
     int charge_unit;
     int** rt_matrix;
     char** adj_matrix;
@@ -34,10 +34,10 @@ void problem_init(problem_t* problem, int num_tasks, int num_types,
                   int total_limit, int charge_unit);
 void problem_destory(problem_t* problem);
 
-void problem_add_task(problem_t* problem, int task_id, res_t res_demands,
+void problem_add_task(problem_t* problem, int task_id, vlen_t* res_demands,
                       int* prev_ids, int num_prevs, int* next_ids,
                       int num_nexts);
-void problem_add_type(problem_t* problem, int vt_id, res_t capacities,
+void problem_add_type(problem_t* problem, int vt_id, vlen_t* capacities,
                       double price, int limit);
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,
                          int runtime);
@@ -65,10 +65,11 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
 #define problem_task_nexts(problem, task_id) ((problem)->tasks[task_id].nexts)
 
 /*inline bool problem_task_is_adjacent(problem_t* problem, int t0, int t1){*/
-    /*printf("%d %d %d 0x%X %p\n", t0, t1, ADJ_INDEX(t1), ADJ_MASK(t1), problem->adj_matrix);*/
-    /*bool res = problem->adj_matrix[t0][ADJ_INDEX(t1)] & ADJ_MASK(t1);*/
-    /*printf(res?"true":"false");*/
-    /*return res;*/
+/*printf("%d %d %d 0x%X %p\n", t0, t1, ADJ_INDEX(t1), ADJ_MASK(t1),
+ * problem->adj_matrix);*/
+/*bool res = problem->adj_matrix[t0][ADJ_INDEX(t1)] & ADJ_MASK(t1);*/
+/*printf(res?"true":"false");*/
+/*return res;*/
 /*}*/
 
 #define problem_task_is_adjacent(problem, t0, t1) \

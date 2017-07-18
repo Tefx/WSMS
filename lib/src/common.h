@@ -38,32 +38,32 @@ typedef int vlen_t;
 #define iMAX(x, y) (x) = MAX(x, y)
 #define iMIN(x, y) (x) = MIN(x, y)
 
-typedef vlen_t res_t[RES_DIM];
-typedef vlen_t plim_t[LIM_DIM];
+/*typedef vlen_t res_t[RES_DIM];*/
+/*typedef vlen_t plim_t[LIM_DIM];*/
 
-bool res_richcmp(res_t r0, res_t r1, int op);
+bool res_richcmp(vlen_t* r0, vlen_t* r1, int op);
 
-typedef vlen_t* volume_t;
+/*typedef vlen_t* vlen_t*;*/
 
-static inline bool vol_le(volume_t a, volume_t b, int dim) {
+static inline bool vol_le(vlen_t* a, vlen_t* b, int dim) {
     for (int i = 0; i < dim; ++i)
         if (fgt(a[i], b[i])) return false;
     return true;
 }
 
-static inline bool vol_le_precise(volume_t a, volume_t b, int dim) {
+static inline bool vol_le_precise(vlen_t* a, vlen_t* b, int dim) {
     for (int i = 0; i < dim; ++i)
         if (a[i] > b[i]) return false;
     return true;
 }
 
-static inline bool vol_lt(volume_t a, volume_t b, int dim) {
+static inline bool vol_lt(vlen_t* a, vlen_t* b, int dim) {
     for (int i = 0; i < dim; ++i)
         if (fge(a[i], b[i])) return false;
     return true;
 }
 
-static inline bool vol_eq(volume_t a, volume_t b, int dim) {
+static inline bool vol_eq(vlen_t* a, vlen_t* b, int dim) {
     for (int i = 0; i < dim; ++i)
         if (!feq(a[i], b[i])) return false;
     return true;
