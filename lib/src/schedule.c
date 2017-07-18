@@ -65,7 +65,7 @@ static inline void _fill_vm_times(schedule_t* schedule) {
 }
 
 void schedule_init(schedule_t* schedule, int num_tasks, int num_vms) {
-    int alloc_size = sizeof(int) * (num_tasks  + num_vms) * 3;
+    int alloc_size = sizeof(int) * (num_tasks + num_vms) * 3;
     schedule->num_tasks = num_tasks;
     schedule->num_vms = num_vms;
     schedule->placements = (int*)malloc(alloc_size);
@@ -76,9 +76,7 @@ void schedule_init(schedule_t* schedule, int num_tasks, int num_vms) {
     schedule->pnvm = 0;
 }
 
-void schedule_destory(schedule_t* schedule) {
-    free(schedule->placements);
-}
+void schedule_destory(schedule_t* schedule) { free(schedule->placements); }
 
 void schedule_set_placements(schedule_t* schedule, int* placements) {
     memcpy(schedule->placements, placements, sizeof(int) * schedule->num_tasks);
@@ -190,11 +188,20 @@ int schedule_calculate_pnvm(schedule_t* schedule, problem_t* problem) {
     qsort(open_times, num_vms, sizeof(int), _compare_int);
     qsort(close_times, num_vms, sizeof(int), _compare_int);
 
+    /*printf("OPEN_TIMES: ");*/
+    /*for (int i=0; i<num_vms; ++i) printf(" %d", open_times[i]);*/
+    /*printf("\n");*/
+    /*printf("CLOSE_TIMES: ");*/
+    /*for (int i=0; i<num_vms; ++i) printf(" %d", close_times[i]);*/
+    /*printf("\n");*/
+
     int peak_num = 0, cur_num = 0;
-    int j = 0;
-    for (int i = 0; i < num_vms; ++i) {
+    for (int i = 0, j = 0; i < num_vms; ++i) {
         int cur_time = open_times[i];
-        while (close_times[j++] <= cur_time) cur_num--;
+        while (close_times[j] <= cur_time) {
+            cur_num--;
+            j++;
+        }
         cur_num++;
         iMAX(peak_num, cur_num);
     }

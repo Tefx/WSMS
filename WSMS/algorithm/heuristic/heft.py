@@ -21,7 +21,7 @@ def HEFT_uni_rt(problem):
     for task_id in sort_tasks_by_upward_ranks(problem):
         best_pl = None, None, None, float("inf")
         est = earliest_start_time(problem, task_id, finish_times)
-        avail_types = problem.valid_types_for_task(task_id)
+        avail_types = list(problem.valid_types_for_demands(problem.task_demands(task_id)))
 
         for machine in platform.machines:
             for type_id in [t for t in avail_types if t >= machine.type_id]:
@@ -31,7 +31,7 @@ def HEFT_uni_rt(problem):
 
         task = Task(task_id)
         machine = Machine(problem)
-        machine.prepare(task, problem.min_type_for_task(task_id))
+        machine.prepare(task, problem.cheapest_type_for_demands(problem.task_demands(task_id)))
         task.start_time = platform.earliest_position(machine, est)
         best_pl = best_placements(best_pl, task, machine, machine.type_id)
 

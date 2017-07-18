@@ -23,6 +23,7 @@ cdef extern from "problem.h":
         plim_t limits;
         int charge_unit
         int* rt_matrix
+        char** adj_matrix
 
     void problem_init(problem_t* problem, int num_tasks, int num_types,
                       int total_limit, int charge_unit)
@@ -39,6 +40,7 @@ cdef extern from "problem.h":
 
     bool problem_task_is_entry(problem_t* problem, int task_id)
     bool problem_task_is_exit(problem_t* problem, int task_id)
+    bool problem_task_is_adjacent(problem_t* problem, int t0, int t1)
 
     task_info_t* problem_task(problem_t* problem, int task_id)
     vlen_t* problem_task_demands(problem_t* problem, int task_id)
@@ -48,6 +50,7 @@ cdef extern from "problem.h":
     plim_t problem_type_demands(problem_t* problem, int type_id)
     vlen_t* problem_type_capacities(problem_t* Problem, int type_id)
     double problem_type_price(problem_t* problem, int type_id)
+    int problem_cheapest_type_for_demands(problem_t* problem, vlen_t* demands)
 
     double problem_charge(problem_t* problem, int type_id, int runtime)
 

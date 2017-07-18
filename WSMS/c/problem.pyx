@@ -61,26 +61,16 @@ cdef class Problem:
         cdef task_info_t* task = problem_task(&self.c, task_id)
         return [task.nexts[i] for i in range(task.num_prevs)]
 
-    def valid_types_for_task(self, int task_id):
-        cdef vlen_t* demands = problem_task_demands(&self.c, task_id)
-        cdef vlen_t* capacities
+    def task_is_adjacent(self, int task_id_0, int task_id_1):
+        return problem_task_is_adjacent(&self.c, task_id_0, task_id_1)
 
-        result = []
-        for type_id in range(self.c.num_types-1, -1, -1):
-            capacities = problem_type_capacities(&self.c, type_id)
-            if res_le(demands, capacities):
-                result.append(type_id)
-            else:
-                break
-        return list(reversed(result))
-
-    def min_type_for_task(self, int task_id):
-        cdef vlen_t* demands = problem_task_demands(&self.c, task_id)
-        cdef vlen_t* capacities
+    def valid_types_for_demands(self, Resources demands):
         for type_id in range(self.c.num_types):
-            capacities = problem_type_capacities(&self.c, type_id)
-            if res_le(demands, capacities):
-                return type_id
+            if res_le(demands.c, problem_type_capacities(&self.c, type_id)):
+                yield type_id
+
+    def cheapest_type_for_demands(self, Resources demands):
+        return problem_cheapest_type_for_demands(&self.c, demands.c)
 
     def type_capacities(self, int type_id):
         res = Resources()

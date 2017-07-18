@@ -119,12 +119,22 @@ cdef class Schedule:
 
         return usages
 
+    def verify_dependencies(self, int task_id):
+        for prev_id in self.problem.task_prevs(task_id):
+            if self.ST(task_id) < self.FT(prev_id):
+                print("Dependency broke:", task_id, prev_id, self.ST(task_id), self.FT(prev_id))
+                return False
+        return True
+
     def verify(self):
         for vm in self.vms:
             capacities = self.problem.type_capacities(self.TYP(vm))
             for usage in self.utilization(vm):
                 if not usage[1] <= capacities:
                     return False
+        for task_id in self.problem.tasks:
+            if not self.verify_dependencies(task_id):
+                return False
         return True
 
     def plot_utilization(self, str res, str name, str path="results"):
@@ -140,13 +150,13 @@ cdef class Schedule:
             times = []
             points = []
             for time, usage in usages:
-                points.extend([usage[res]]*2)
+                points.extend([usage[res] / 1000.0]*2)
                 times.extend([time]*2)
             times = times[1:-1]
             points = points[:-2]
             ax.grid(True)
             ax.fill_between(times, points, 0, facecolor="green")
-            ax.set_ylim(0, capacities[res])
+            ax.set_ylim(0, capacities[res] / 1000.0)
             ax.set_ylabel(res)
 
         axes[-1].set_xlabel("Times (s)")

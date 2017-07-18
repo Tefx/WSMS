@@ -24,6 +24,9 @@ cdef class Resources:
         res_isub(self.c, other.c)
         return self
 
+    def imax(Resources self, Resources other):
+        res_imax(self.c, other.c)
+
     def __richcmp__(Resources self, Resources other, int op):
         return res_richcmp(self.c, other.c, op)
 

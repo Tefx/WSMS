@@ -45,9 +45,9 @@ def test_performance(problem, wrk):
 
 def test_heft(problem, wrk):
     schedule = HEFT_uni_rt(problem)
-    print("OBJS: {:<56} PNVM: {:<8} Verified {}".format(
+    print("[TEST_HEFT]:\t OBJS: {:<56} PNVM: {:<8} Verified {}".format(
         str(schedule.objectives), schedule.pnvm, schedule.verify()))
-    schedule.plot_utilization("core", wrk)
+    schedule.plot_utilization("core", "{}_by_HEFT".format(wrk))
 
 
 def test_ind(problem, wrk):
@@ -55,20 +55,28 @@ def test_ind(problem, wrk):
 
     mpool = FastInd.create_mpool(2000)
     schedule = HEFT_uni_rt(problem)
-    print(schedule.objectives)
     for _ in range(10):
-        ind = FastInd.from_schedule(schedule, mpool)
+        ind = FastInd.from_schedule(problem, schedule, mpool)
         for _ in range(10000):
             ind = ind.clone()
-            ind.mutate()
-            schedule = ind.to_schedule(problem)
-    print(schedule.objectives)
+            ind.mutate(problem)
+            ind.evaluate(problem)
+    print("[TEST IND]:\t", ind.makespan, ind.cost, ind.pnvm, schedule.verify())
+
+
+def test_ea(problem, wrk):
+    from WSMS.algorithm.meta.evolutionary import ea_fastind_simple
+    schedule = ea_fastind_simple(problem, problem.num_tasks * 20, 10)
+    print("[TEST EA]:\t OBJS: {:<56} PNVM: {:<8} Verified {}".format(
+        str(schedule.objectives), schedule.pnvm, schedule.verify()))
+    schedule.plot_utilization("core", "{}_by_EA".format(wrk))
 
 
 if __name__ == '__main__':
     for wrk in workflows:
         print("Running on {}...".format(wrk))
         problem = Problem.load(wrk, "EC2", 20, 3600)
-        test_performance(problem, wrk)
+        # test_performance(problem, wrk)
         test_heft(problem, wrk)
-        test_ind(problem, wrk)
+        # test_ind(problem, wrk)
+        test_ea(problem, wrk)
