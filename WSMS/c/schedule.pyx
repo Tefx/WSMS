@@ -10,7 +10,6 @@ cdef class Schedule:
     def __cinit__(self, Problem problem, int num_vms):
         self.problem = problem
         schedule_init(&self.c, problem.num_tasks, num_vms)
-        self._calculated = False
 
     def __dealloc__(self):
         schedule_destory(&self.c)
@@ -29,6 +28,7 @@ cdef class Schedule:
         schedule.placements = placements
         schedule.vm_types = vm_types
         schedule.start_times = start_times
+        schedule.evaluate()
         return schedule
 
     def __setattr__(self, attr, value):
@@ -43,11 +43,20 @@ cdef class Schedule:
     def set_start_times(self, array.array start_times):
         schedule_set_start_times(&self.c, start_times.data.as_ints)
 
+    def simulate(self, array.array order, bool forward):
+        schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, forward)
+
+    def evaluate(self):
+        schedule_calculate_objectives(&self.c, &self.problem.c)
+        schedule_calculate_pnvm(&self.c, &self.problem.c)
+
     def set_scheduling_order(self, array.array order):
         schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, False)
+        self.evaluate()
 
     def set_start_order(self, array.array order):
         schedule_simulate(&self.c, &self.problem.c, order.data.as_ints, True)
+        self.evaluate()
 
     def PL(self, int task_id):
         return PL(&self.c, task_id)
@@ -66,18 +75,18 @@ cdef class Schedule:
 
     @property
     def objectives(self):
-        if not self._calculated:
-            schedule_calculate_objectives(&self.c, &self.problem.c)
-            schedule_calculate_pnvm(&self.c, &self.problem.c)
-            self._calculated = True
         return schedule_objectives(&self.c)
 
     @property
+    def makespan(self):
+        return schedule_objectives(&self.c).makespan
+
+    @property
+    def cost(self):
+        return schedule_objectives(&self.c).cost
+
+    @property
     def pnvm(self):
-        if not self._calculated:
-            schedule_calculate_objectives(&self.c, &self.problem.c)
-            schedule_calculate_pnvm(&self.c, &self.problem.c)
-            self._calculated = True
         return schedule_pnvm(&self.c)
 
     @property
@@ -89,10 +98,6 @@ cdef class Schedule:
         return self.c.num_vms
 
     def utilization(self, int vm_id):
-        if not self._calculated:
-            schedule_calculate_objectives(&self.c, &self.problem.c)
-            schedule_calculate_pnvm(&self.c, &self.problem.c)
-            self._calculated = True
         _tasks = [t for t in self.problem.tasks if self.PL(t) == vm_id]
         tid_by_st = sorted(_tasks, key=self.ST)
         tid_by_ft = sorted(_tasks, key=self.FT)

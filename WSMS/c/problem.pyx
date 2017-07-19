@@ -41,6 +41,9 @@ cdef class Problem:
     def __dealloc__(self):
         problem_destory(&self.c)
 
+    def reverse_dag(self):
+        problem_reverse_dag(&self.c)
+
     def task_demands(self, int task_id):
         return wrap_c_resources(problem_task_demands(&self.c, task_id))
 
@@ -68,6 +71,9 @@ cdef class Problem:
         for type_id in range(self.c.num_types):
             if res_le(demands.c, problem_type_capacities(&self.c, type_id)):
                 yield type_id
+
+    def cheapest_type(self):
+        return problem_cheapest_type(&self.c)
 
     def cheapest_type_for_demands(self, Resources demands):
         return problem_cheapest_type_for_demands(&self.c, demands.c)

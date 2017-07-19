@@ -1,5 +1,8 @@
+from WSMS.c.common cimport wrap_c_resources
+
 from cpython cimport array
 import array
+from operator import attrgetter
 
 
 cdef class Task:
@@ -53,11 +56,19 @@ cdef class Machine:
         task_prepare(&task.c, self._problem, task._task_id, type_id)
         return machine_earliest_position(&self.c, &task.c, est, capacities)
 
+    def extendable_interval(self, Task task):
+        cdef vlen_t* capacities = problem_type_capacities(self._problem, self._type_id)
+        cdef int st = machine_extendable_interval_start(&self.c, &task.c, capacities)
+        cdef int ft = machine_extendable_interval_finish(&self.c, &task.c, capacities)
+        return max(st, self.open_time), min(ft, self.close_time)
+
     def place(self, Task task):
         self._tasks.add(task)
         return machine_place_task(&self.c, &task.c)
 
     def shift(self, Task task, int delta):
+        # print()
+        # print("Shifting", task.task_id, delta)
         machine_shift_task(&self.c, &task.c, delta)
 
     @property
@@ -79,9 +90,26 @@ cdef class Machine:
 
     @property
     def peak_usage(self):
-        res = Resources()
-        res._setc(machine_peak_usage(&self.c))
-        return res
+        return wrap_c_resources(machine_peak_usage(&self.c))
+
+    def tight_type(self):
+        self.type_id = problem_cheapest_type_for_demands(self._problem, 
+                                                         machine_peak_usage(&self.c));
+
+    def tight_span(self, list tasks):
+        cdef int* deps;
+        for task in sorted(self._tasks, key=attrgetter("finish_time"), reverse=True):
+            deps = problem_task_nexts(self._problem, task.task_id)
+            lft = self.extendable_interval(task)[1]
+            for i in range(problem_task_num_nexts(self._problem, task.task_id)):
+                lft = min(lft, tasks[deps[i]].start_time)
+            self.shift(task, lft - task.finish_time)
+        for task in sorted(self._tasks, key=attrgetter("start_time")):
+            deps = problem_task_prevs(self._problem, task.task_id)
+            est = self.extendable_interval(task)[0]
+            for i in range(problem_task_num_prevs(self._problem, task.task_id)):
+                est = max(est, tasks[deps[i]].finish_time)
+            self.shift(task, est - task.start_time)
 
     @property
     def runtime(self):

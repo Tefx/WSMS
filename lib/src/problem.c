@@ -66,11 +66,35 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
     problem->rt_matrix[type_id][task_id] = runtime;
 }
 
+void problem_reverse_dag(problem_t* problem) {
+    int tmp_num;
+    int* tmp_dep;
+    task_info_t* task;
+    for (int task_id = 0; task_id < problem->num_tasks; ++task_id) {
+        task = problem_task(problem, task_id);
+        tmp_num = task->num_nexts;
+        task->num_nexts = task->num_prevs;
+        task->num_prevs = tmp_num;
+        tmp_dep = task->prevs;
+        task->prevs = task->nexts;
+        task->nexts = tmp_dep;
+    }
+}
+
 int problem_task_average_runtime(problem_t* problem, int task_id) {
     int sum = 0;
     for (int i = 0; i < problem->num_types; ++i)
         sum += problem_task_runtime(problem, task_id, i);
     return sum / problem->num_types;
+}
+
+int problem_cheapest_type(problem_t* problem) {
+    double min_price = DBL_MAX;
+    int cheapest_type = -1;
+    for (int type_id = 0; type_id < problem->num_types; ++type_id)
+        if (problem_type_price(problem, type_id) < min_price)
+            cheapest_type = type_id;
+    return cheapest_type;
 }
 
 int problem_cheapest_type_for_demands(problem_t* problem, vlen_t* demands) {

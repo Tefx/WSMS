@@ -11,18 +11,18 @@ class MSC(object):
         self.platform = None
 
     def fitness_default(self):
-        return None
+        return inf
 
     def fitness(self, task, machine, type_id):
         raise NotImplementedError
 
     def fitness_better_than(self, fitness_0, fitness_1):
-        raise NotImplementedError
+        return fitness_0 < fitness_1
 
     def sort_tasks(self):
         raise NotImplementedError
 
-    def _candidate_types(self, min_demands, max_demands):
+    def candidate_types(self, min_demands, max_demands):
         upper_types = []
         for type_id in self.problem.types:
             capacities = self.problem.type_capacities(type_id)
@@ -37,11 +37,11 @@ class MSC(object):
 
     def candidate_types_for_existing_vms(self, machine, demands):
         peak_usage = machine.peak_usage
-        yield from self._candidate_types(
+        yield from self.candidate_types(
             Resources.max([peak_usage, demands]), peak_usage + demands)
 
     def candidate_types_for_new_vm(self, demands):
-        yield from self._candidate_types(demands, demands)
+        yield from self.candidate_types(demands, demands)
 
     def best_placement_on_existing_vms(self, task_id, est):
         demands = self.problem.task_demands(task_id)
@@ -108,15 +108,91 @@ class MSC(object):
         return Schedule.from_platform(self.problem, self.platform)
 
 
-class MSC_EFT(MSC):
+class HEFT_on_max(MSC):
+    def __init__(self, problem):
+        super(HEFT_on_max, self).__init__(problem)
+        self.find_max_types()
+
+    def find_max_types(self):
+        types = [(type_id, self.problem.type_capacities(type_id))
+                 for type_id in self.problem.types]
+        self.max_types = []
+        for type_id, capacities in types:
+            if not any(capacities < other_capacities
+                       for _, other_capacities in types):
+                self.max_types.append(type_id)
+
+    def candidate_types(self, min_demands, max_demands):
+        return [
+            type_id for type_id in self.max_types
+            if min_demands <= self.problem.type_capacities(type_id)
+        ]
+
+    def fitness(self, task, machine, type_id):
+        return task.finish_time
+
+    def sort_tasks(self):
+        return sort_tasks_by_upward_ranks(self.problem)
+
+    def solve(self):
+        super().solve()
+        for machine in self.platform.machines:
+            machine.tight_type()
+
+
+class MSC_EFTC(MSC):
     def fitness_default(self):
         return inf, inf
 
     def fitness(self, task, machine, type_id):
         return task.finish_time, machine.cost_increase(task, type_id)
 
-    def fitness_better_than(self, fitness_0, fitness_1):
-        return fitness_0 < fitness_1
-
     def sort_tasks(self):
         return sort_tasks_by_upward_ranks(self.problem)
+
+
+class MSC_DL(MSC):
+    @staticmethod
+    def generate_deadline(problem, k_dl):
+        cheapest_type = problem.cheapest_type()
+        min_span = HEFT_on_max(problem).schedule.makespan
+        max_span = sum(
+            problem.task_runtime(task_id, cheapest_type)
+            for task_id in problem.tasks)
+        return min_span + (max_span - min_span) * k_dl
+
+    def __init__(self, problem, deadline):
+        super().__init__(problem)
+        self.deadline = deadline
+        self.calculate_latest_start_times()
+
+    def calculate_latest_start_times(self):
+        self.problem.reverse_dag()
+        schedule = HEFT_on_max(self.problem).schedule
+        self.latest_start_times = [
+            self.deadline - schedule.FT(t) for t in self.problem.tasks
+        ]
+        self.problem.reverse_dag()
+
+    def fitness_default(self):
+        return inf, inf
+
+    def fitness(self, task, machine, type_id):
+        return task.start_time - self.latest_start_times[task.task_id], \
+                machine.cost_increase(task, type_id)
+
+    def fitness_better_than(self, fitness_0, fitness_1):
+        dt_0, dc_0 = fitness_0
+        dt_1, dc_1 = fitness_1
+        if dt_0 <= 0 and dt_1 <= 0:
+            return (dc_0, dt_0) <= (dc_1, dt_1)
+        return (dt_0, dc_0) <= (dt_1, dc_1)
+
+    def sort_tasks(self):
+        return sorted(self.problem.tasks, key=self.latest_start_times.__getitem__)
+
+    def solve(self):
+        super().solve()
+        for machine in self.platform.machines:
+            machine.tight_type()
+            machine.tight_span(self.tasks)

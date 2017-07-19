@@ -37,6 +37,7 @@ cdef extern from "problem.h":
                           double price, int limit)
     void problem_set_runtime(problem_t* problem,
                         int task_id, int type_id, int runtime)
+    void problem_reverse_dag(problem_t* problem)
 
     bool problem_task_is_entry(problem_t* problem, int task_id)
     bool problem_task_is_exit(problem_t* problem, int task_id)
@@ -47,9 +48,16 @@ cdef extern from "problem.h":
     int problem_task_runtime(problem_t* problem, int task_id, int type_id)
     int problem_task_average_runtime(problem_t* problem, int task_id)
 
+    int problem_task_num_prevs(problem_t* problem, int task_id)
+    int problem_task_num_nexts(problem_t* problem, int task_id)
+    int* problem_task_prevs(problem_t* problem, int task_id)
+    int* problem_task_nexts(problem_t* problem, int task_id)
+
     vlen_t* problem_type_demands(problem_t* problem, int type_id)
     vlen_t* problem_type_capacities(problem_t* Problem, int type_id)
     double problem_type_price(problem_t* problem, int type_id)
+
+    int problem_cheapest_type(problem_t* problem)
     int problem_cheapest_type_for_demands(problem_t* problem, vlen_t* demands)
 
     double problem_charge(problem_t* problem, int type_id, int runtime)

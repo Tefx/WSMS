@@ -319,13 +319,16 @@ void bin_shift(bin_t* bin, int delta) {
 }
 
 void bin_shift_item(bin_t* bin, item_t* item, int delta) {
+    /*printf("Before %d %d %d\n", item->start_time, item->start_node->time, item->length);*/
+    /*bin_print(bin);*/
     vol_ineg(item->demands, bin->volume_dim);
     bin_place_item(bin, item);
     vol_ineg(item->demands, bin->volume_dim);
     item->start_time += delta;
-    item->finish_node += delta;
     item->start_node = item->finish_node = NULL;
     bin_place_item(bin, item);
+    /*printf("After %d %d %d\n", item->start_time, item->start_node->time, item->length);*/
+    /*bin_print(bin);*/
 }
 
 vlen_t* bin_peak_usage(bin_t* bin) {

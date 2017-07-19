@@ -42,20 +42,24 @@ void problem_add_type(problem_t* problem, int vt_id, vlen_t* capacities,
 void problem_set_runtime(problem_t* problem, int task_id, int type_id,
                          int runtime);
 
+void problem_reverse_dag(problem_t* problem);
+
 #define ADJ_INDEX(task_id) ((task_id) / CHAR_BIT)
 #define ADJ_MASK(task_id) (0x1 << ((task_id) % CHAR_BIT))
 
 #define problem_task_is_entry(problem, task_id) \
     ((problem)->tasks[task_id].num_prevs == 0)
-
 #define problem_task_is_exit(problem, task_id) \
     ((problem)->tasks[task_id].num_nexts == 0)
+#define problem_task_is_adjacent(problem, t0, t1) \
+    ((problem->adj_matrix[t0][ADJ_INDEX(t1)] & ADJ_MASK(t1)) != 0)
 
 #define problem_task(problem, task_id) ((problem)->tasks + (task_id))
 #define problem_task_demands(problem, task_id) \
     ((problem)->tasks[task_id].demands)
 #define problem_task_runtime(problem, task_id, type_id) \
     ((problem)->rt_matrix[type_id][task_id])
+int problem_task_average_runtime(problem_t* problem, int task_id);
 
 #define problem_task_num_prevs(problem, task_id) \
     ((problem)->tasks[task_id].num_prevs)
@@ -64,9 +68,6 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
 #define problem_task_prevs(problem, task_id) ((problem)->tasks[task_id].prevs)
 #define problem_task_nexts(problem, task_id) ((problem)->tasks[task_id].nexts)
 
-#define problem_task_is_adjacent(problem, t0, t1) \
-    ((problem->adj_matrix[t0][ADJ_INDEX(t1)] & ADJ_MASK(t1)) != 0)
-
 #define problem_type(problem, type_id) ((problem)->types + type_id)
 #define problem_type_demands(problem, type_id) \
     ((problem)->types[type_id].demands)
@@ -74,12 +75,11 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
     ((problem)->types[type_id].capacities)
 #define problem_type_price(problem, type_id) ((problem)->types[type_id].price)
 
+int problem_cheapest_type(problem_t* problem);
+int problem_cheapest_type_for_demands(problem_t* problem, vlen_t* demands);
+
 #define problem_charge(problem, type_id, runtime) \
     (problem_type_price(problem, type_id) *       \
      _div_and_ceil(runtime, (problem)->charge_unit))
-
-int problem_task_average_runtime(problem_t* problem, int task_id);
-
-int problem_cheapest_type_for_demands(problem_t* problem, vlen_t* demands);
 
 #endif  // ifndef WMSM_PROBLEM_H

@@ -67,6 +67,8 @@ cdef class FastInd:
         cdef Schedule schedule = Schedule(problem, self.c_ptr.num_vms)
         fi_to_schedule(self.c_ptr, &schedule.c)
         schedule_simulate(&schedule.c, &problem.c, self.c_ptr.order, True)
+        schedule_calculate_objectives(&schedule.c, &problem.c)
+        schedule_calculate_pnvm(&schedule.c, &problem.c)
         return schedule
 
     def evaluate(self, Problem problem):
