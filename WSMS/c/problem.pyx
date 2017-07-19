@@ -1,3 +1,5 @@
+from WSMS.c.common cimport wrap_c_resources
+
 from cpython cimport array
 import array
 from math import ceil
@@ -40,9 +42,7 @@ cdef class Problem:
         problem_destory(&self.c)
 
     def task_demands(self, int task_id):
-        res = Resources()
-        res._setc(problem_task_demands(&self.c, task_id))
-        return res
+        return wrap_c_resources(problem_task_demands(&self.c, task_id))
 
     def task_runtime(self, int task_id, int type_id):
         return problem_task_runtime(&self.c, task_id, type_id)
@@ -73,9 +73,7 @@ cdef class Problem:
         return problem_cheapest_type_for_demands(&self.c, demands.c)
 
     def type_capacities(self, int type_id):
-        res = Resources()
-        res._setc(problem_type_capacities(&self.c, type_id))
-        return res
+        return wrap_c_resources(problem_type_capacities(&self.c, type_id))
 
     def type_price(self, int type_id):
         return problem_type_price(&self.c, type_id)

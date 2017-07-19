@@ -1,4 +1,4 @@
-from WSMS.c.common cimport vlen_t, Resources, res_t
+from WSMS.c.common cimport vlen_t, Resources, res_t, vol_max_t
 from WSMS.c.problem cimport *
 from WSMS.c.mpool cimport MemPool, mempool_t, mp_free_pool
 
@@ -18,6 +18,8 @@ cdef extern from "platform.h":
         int volume_dim
         vlen_t* vol_tmp
         bin_node_t* last_start_node
+        vol_max_t peak_usage
+        bool peak_need_update
 
     ctypedef item_t task_t
     void task_prepare(task_t* task, problem_t* problem, int task_id, int type_id);
@@ -28,7 +30,6 @@ cdef extern from "platform.h":
     struct machine_t:
         bin_t bin
         item_t item
-        # res_t peak_usage
 
     void machine_init(machine_t *machine, int num_tasks)
     void machine_destory(machine_t *machine)
@@ -40,6 +41,7 @@ cdef extern from "platform.h":
     int machine_open_time(machine_t *machine)
     int machine_close_time(machine_t *machine)
     int machine_runtime(machine_t *machine)
+    vlen_t* machine_peak_usage(machine_t* machine)
 
     int machine_earliest_position(machine_t *machine, task_t *task, int est,
                                   vlen_t* capacities)
@@ -56,6 +58,7 @@ cdef extern from "platform.h":
     void platform_destory(platform_t *platform)
 
     void platform_print(platform_t* platform)
+    vlen_t* platform_peak_usage(platform_t* platform)
 
     int platform_earliest_position(platform_t *platform, machine_t *machine,
                                    int est, vlen_t* plim)

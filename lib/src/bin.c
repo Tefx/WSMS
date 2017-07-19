@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <x86intrin.h>
+#include <float.h>
 
 static vlen_t vol_tmp[DIM_MAX];
 
@@ -59,9 +60,11 @@ void bin_init(bin_t* bin, int dim, mempool_t* pool) {
     list_init_head(&bin->head->list);
     bin_node_t* tail = _alloc_node(bin);
     tail->time = INT_MAX;
-    _set_volume(tail, 0, dim);
+    _set_volume(tail, DBL_MAX, dim);
     list_insert_after(&bin->head->list, &tail->list);
     bin->last_start_node = bin->head;
+    vol_set(bin->peak_usage, 0, DIM_MAX);
+    bin->peak_need_update = false;
 }
 
 void bin_empty(bin_t* bin) {
@@ -100,10 +103,9 @@ static inline bin_node_t* _search_node(bin_t* bin, int time) {
 
 static inline bin_node_t* _earliest_slot(bin_node_t* node, int est, int length,
                                          vlen_t* vol, int dim) {
-    register int ft = est + length;
+    int ft = est + length;
     bin_node_t* start_node = node;
     vol_iadd_v(vol, EPSILON, dim);
-    for (int i = 0; i < dim; ++i) vol[i] += EPSILON;
     while (node->time < ft) {
         if (vol_le_precise(bnode_usage(node), vol, dim)) {
             node = _next(node);
@@ -116,9 +118,9 @@ static inline bin_node_t* _earliest_slot(bin_node_t* node, int est, int length,
     return start_node;
 }
 
-static inline bin_node_t* _earliest_slot_small(bin_node_t* node, int est,
+static inline bin_node_t* _earliest_slot_res(bin_node_t* node, int est,
                                                int length, vlen_t* vol) {
-    register int ft = est + length;
+    int ft = est + length;
     bin_node_t* start_node = node;
     res_iadd_v(vol, EPSILON);
     while (node->time < ft) {
@@ -136,14 +138,14 @@ static inline bin_node_t* _earliest_slot_small(bin_node_t* node, int est,
 int bin_earliest_position(bin_t* bin, item_t* item, int est, vlen_t* cap) {
     int dim = bin->volume_dim;
     vol_sub(vol_tmp, cap, item->demands, dim);
-    item->start_node = _earliest_slot(_search_node(bin, est), est, item->length,
-                                      vol_tmp, dim);
+    item->start_node =
+        _earliest_slot(_search_node(bin, est), est, item->length, vol_tmp, dim);
     return MAX(est, item->start_node->time);
 }
 
 int bin_earliest_position_res(bin_t* bin, item_t* item, int est, vlen_t* cap) {
     res_sub(vol_tmp, cap, item->demands);
-    item->start_node = _earliest_slot_small(_search_node(bin, est), est,
+    item->start_node = _earliest_slot_res(_search_node(bin, est), est,
                                             item->length, vol_tmp);
     return MAX(est, item->start_node->time);
 }
@@ -181,6 +183,14 @@ int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
     return item->start_time = MAX(est, node->time);
 }
 
+#define _update_peak(bin, node, delta)                                         \
+    {                                                                          \
+        if ((delta)[0] < 0)                                                    \
+            (bin)->peak_need_update = true;                                    \
+        else                                                                   \
+            vol_imax((bin)->peak_usage, bnode_usage(node), (bin)->volume_dim); \
+    }
+
 static inline bin_node_t* _bin_alloc(bin_t* bin, int st, int ft,
                                      vlen_t* demands, bin_node_t* node) {
     int dim = bin->volume_dim;
@@ -188,6 +198,7 @@ static inline bin_node_t* _bin_alloc(bin_t* bin, int st, int ft,
     if (node->time != st) node = _clone_node(bin, node, st);
     vlen_t* usage = bnode_usage(node);
     vol_iadd(usage, demands, dim);
+    _update_peak(bin, node, demands);
     if (vol_eq(bnode_usage(_prev(node)), usage, dim)) {
         _delete_node(bin, node);
         node = _prev(node);
@@ -197,6 +208,7 @@ static inline bin_node_t* _bin_alloc(bin_t* bin, int st, int ft,
     while (node->time < ft) {
         usage = bnode_usage(node);
         vol_iadd(usage, demands, dim);
+        _update_peak(bin, node, demands);
         node = _next(node);
     }
     if (node->time > ft) {
@@ -209,12 +221,21 @@ static inline bin_node_t* _bin_alloc(bin_t* bin, int st, int ft,
     return node;
 }
 
+#define _update_peak_res(bin, node, delta)                  \
+    {                                                       \
+        if ((delta)[0] < 0)                                 \
+            (bin)->peak_need_update = true;                 \
+        else                                                \
+            res_imax((bin)->peak_usage, bnode_usage(node)); \
+    }
+
 static inline bin_node_t* _bin_alloc_small(bin_t* bin, int st, int ft,
                                            vlen_t* demands, bin_node_t* node) {
     if (!node) node = _search_node(bin, st);
     if (node->time != st) node = _clone_node(bin, node, st);
     vlen_t* usage = bnode_usage(node);
     res_iadd(usage, demands);
+    _update_peak_res(bin, node, demands);
     if (res_eq(bnode_usage(_prev(node)), usage)) {
         _delete_node(bin, node);
         node = _prev(node);
@@ -224,6 +245,7 @@ static inline bin_node_t* _bin_alloc_small(bin_t* bin, int st, int ft,
     while (node->time < ft) {
         usage = bnode_usage(node);
         res_iadd(usage, demands);
+        _update_peak_res(bin, node, demands);
         node = _next(node);
     }
     if (node->time > ft) {
@@ -241,6 +263,7 @@ int bin_place_item(bin_t* bin, item_t* item) {
     int ft = st + item->length;
     item->finish_node =
         _bin_alloc(bin, st, ft, item->demands, item->start_node);
+    item->start_node = bin->last_start_node;
     return ft;
 }
 
@@ -249,6 +272,7 @@ int bin_place_item_res(bin_t* bin, item_t* item) {
     int ft = st + item->length;
     item->finish_node =
         _bin_alloc_small(bin, st, ft, item->demands, item->start_node);
+    item->start_node = bin->last_start_node;
     return ft;
 }
 
@@ -302,4 +326,19 @@ void bin_shift_item(bin_t* bin, item_t* item, int delta) {
     item->finish_node += delta;
     item->start_node = item->finish_node = NULL;
     bin_place_item(bin, item);
+}
+
+vlen_t* bin_peak_usage(bin_t* bin) {
+    if (bin->peak_need_update) {
+        vol_set(bin->peak_usage, 0, bin->volume_dim);
+        bin_node_t* node = bin->head;
+        res_imax(bin->peak_usage, bnode_usage(node));
+        node = _next(node);
+        while (node != bin->head) {
+            res_imax(bin->peak_usage, bnode_usage(node));
+            node = _next(node);
+        }
+        bin->peak_need_update = false;
+    }
+    return bin->peak_usage;
 }

@@ -23,7 +23,6 @@ inline void task_prepare(task_t *task, problem_t *problem, int task_id,
 typedef struct machine_t {
     bin_t bin;
     item_t item;
-    /*vlen_t peak_usage[RES_DIM];*/
 } machine_t;
 
 #define machine_bin(machine) (&(machine)->bin)
@@ -39,6 +38,7 @@ void machine_destory(machine_t *machine);
 #define machine_open_time(machine) bin_open_time(machine_bin(machine))
 #define machine_close_time(machine) bin_close_time(machine_bin(machine))
 #define machine_runtime(machine) bin_span(machine_bin(machine))
+#define machine_peak_usage(machine) bin_peak_usage(machine_bin(machine))
 
 int machine_earliest_position(machine_t *machine, task_t *task, int est,
                               vlen_t *capacities);
@@ -57,6 +57,8 @@ typedef bin_t platform_t;
 void platform_init(platform_t *platform, int limit);
 void platform_destory(platform_t *platform);
 #define platform_print(platform) bin_print(platform_bin(platform))
+
+#define platform_peak_usage(platform) bin_peak_usage(platform_bin(platform))
 
 int platform_earliest_position(platform_t *platform, machine_t *machine,
                                int est, vlen_t *plim);

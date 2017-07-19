@@ -2,6 +2,7 @@ from libcpp cimport bool
 
 DEF RES_DIM = 2
 DEF LIM_DIM = 1
+DEF DIM_MAX = 2
 
 cdef extern from "common.h":
     ctypedef int vlen_t
@@ -15,7 +16,10 @@ cdef extern from "common.h":
 
 ctypedef vlen_t res_t[RES_DIM]
 ctypedef vlen_t plim_t[LIM_DIM]
+ctypedef vlen_t vol_max_t[DIM_MAX]
 
 cdef class Resources:
     cdef res_t c
     cdef _setc(self, vlen_t* c)
+
+cdef wrap_c_resources(vlen_t* c)

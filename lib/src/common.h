@@ -38,12 +38,7 @@ typedef int vlen_t;
 #define iMAX(x, y) (x) = MAX(x, y)
 #define iMIN(x, y) (x) = MIN(x, y)
 
-/*typedef vlen_t res_t[RES_DIM];*/
-/*typedef vlen_t plim_t[LIM_DIM];*/
-
 bool res_richcmp(vlen_t* r0, vlen_t* r1, int op);
-
-/*typedef vlen_t* vlen_t*;*/
 
 static inline bool vol_le(vlen_t* a, vlen_t* b, int dim) {
     for (int i = 0; i < dim; ++i)

@@ -10,7 +10,6 @@ def HEFT_uni_rt(problem):
         ci = machine.cost_increase(task, type_id)
         if (not best_task) \
            or (task.finish_time < best_task.finish_time) :
-            # or (task.finish_time == best_task.finish_time and ci < best_ci):
             return task, machine, type_id, ci
         else:
             return best_pl
@@ -31,10 +30,8 @@ def HEFT_uni_rt(problem):
                 best_pl = best_placements(best_pl, task, machine, type_id)
 
         task = Task(task_id)
-        machine = Machine(problem)
-        machine.prepare(
-            task,
-            problem.cheapest_type_for_demands(problem.task_demands(task_id)))
+        type_id = problem.cheapest_type_for_demands(problem.task_demands(task_id))
+        machine = Machine.new_for_task(problem, task, type_id)
         task.start_time = platform.earliest_position(machine, est)
         best_pl = best_placements(best_pl, task, machine, machine.type_id)
 

@@ -28,6 +28,8 @@ typedef struct bin_t {
     mempool_t* pool;
     int volume_dim;
     bin_node_t* last_start_node;
+    vlen_t peak_usage[DIM_MAX];
+    bool peak_need_update;
 } bin_t;
 
 void bin_print(bin_t* bin);
@@ -44,6 +46,7 @@ void bin_shift(bin_t* bin, int delta);
 int bin_open_time(bin_t* bin);
 int bin_close_time(bin_t* bin);
 int bin_span(bin_t* bin);
+vlen_t* bin_peak_usage(bin_t* bin);
 
 int bin_earliest_position(bin_t* bin, item_t* item, int est,
                           vlen_t* capacities);

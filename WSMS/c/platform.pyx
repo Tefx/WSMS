@@ -41,6 +41,12 @@ cdef class Machine:
         self.type_id = type_id
         machine_set_runtime(&self.c, rt)
 
+    @classmethod
+    def new_for_task(cls, Problem problem, Task task, int type_id):
+        machine = cls(problem)
+        machine.prepare(task, type_id)
+        return machine
+
     def earliest_position(self, Task task, int est, int type_id=-1):
         if type_id < 0: type_id = self._type_id
         cdef vlen_t* capacities = problem_type_capacities(self._problem, type_id)
@@ -70,6 +76,12 @@ cdef class Machine:
     @property
     def close_time(self):
         return machine_close_time(&self.c)
+
+    @property
+    def peak_usage(self):
+        res = Resources()
+        res._setc(machine_peak_usage(&self.c))
+        return res
 
     @property
     def runtime(self):
@@ -126,6 +138,10 @@ cdef class Platform:
     @property
     def machines(self):
         return self._machines
+
+    @property
+    def peak_usage(self):
+        return platform_peak_usage(&self.c)[0]
 
     def print_bin(self):
         platform_print(&self.c)

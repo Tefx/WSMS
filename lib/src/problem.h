@@ -64,14 +64,6 @@ void problem_set_runtime(problem_t* problem, int task_id, int type_id,
 #define problem_task_prevs(problem, task_id) ((problem)->tasks[task_id].prevs)
 #define problem_task_nexts(problem, task_id) ((problem)->tasks[task_id].nexts)
 
-/*inline bool problem_task_is_adjacent(problem_t* problem, int t0, int t1){*/
-/*printf("%d %d %d 0x%X %p\n", t0, t1, ADJ_INDEX(t1), ADJ_MASK(t1),
- * problem->adj_matrix);*/
-/*bool res = problem->adj_matrix[t0][ADJ_INDEX(t1)] & ADJ_MASK(t1);*/
-/*printf(res?"true":"false");*/
-/*return res;*/
-/*}*/
-
 #define problem_task_is_adjacent(problem, t0, t1) \
     ((problem->adj_matrix[t0][ADJ_INDEX(t1)] & ADJ_MASK(t1)) != 0)
 
