@@ -84,4 +84,4 @@ if __name__ == '__main__':
         test_heft_om(problem, wrk)
         # test_msc_eft(problem, wrk)
         test_msc_dl(problem, wrk, 0)
-        test_ea(problem, wrk)
+        # test_ea(problem, wrk)

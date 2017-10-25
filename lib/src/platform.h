@@ -8,13 +8,8 @@
 typedef item_t task_t;
 #define task_item(task) (task)
 
-inline void task_prepare(task_t *task, problem_t *problem, int task_id,
-                         int type_id) {
-    task_t *item = task_item(task);
-    item->start_node = item->finish_node = NULL;
-    item->length = problem_task_runtime(problem, task_id, type_id);
-    item->demands = problem_task_demands(problem, task_id);
-}
+void task_prepare(task_t *task, problem_t *problem, int task_id,
+                         int type_id);
 
 #define task_set_start_time(task, st) task_item(task)->start_time = st
 #define task_start_time(task) (task_item(task)->start_time)

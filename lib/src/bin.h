@@ -16,12 +16,13 @@ typedef struct bin_node_t {
  * size)*/
 
 typedef struct item_t {
-    bin_node_t* start_node;
-    bin_node_t* finish_node;
-    vlen_t* demands;
     int start_time;
     int length;
+    vlen_t* demands;
+    bin_node_t* latest_available_node;
 } item_t;
+
+#define item_start_time(item) (item)->start_time
 
 typedef struct bin_t {
     bin_node_t* head;
@@ -52,8 +53,6 @@ int bin_earliest_position(bin_t* bin, item_t* item, int est,
                           vlen_t* capacities);
 int bin_earliest_position_res(bin_t* bin, item_t* item, int est,
                               vlen_t* capacities);
-int bin_earliest_position_forward(bin_t* bin, item_t* item, int est,
-                                  vlen_t* cap);
 int bin_earliest_position_forward_res(bin_t* bin, item_t* item, int est,
                                       vlen_t* cap);
 int bin_place_item(bin_t* bin, item_t* item);

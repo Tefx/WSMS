@@ -6,11 +6,10 @@ from WSMS.c.mpool cimport MemPool, mempool_t, mp_free_pool
 cdef extern from "platform.h":
     struct bin_node_t
     struct item_t:
-        bin_node_t* start_node
-        bin_node_t* finish_node
-        vlen_t* demands
         int start_time
         int length
+        vlen_t* demands
+        bin_node_t* latest_available_node
 
     struct bin_t:
         bin_node_t* head
